@@ -6,10 +6,14 @@ import fishImage from 'figma:asset/62f52d45234fa34e0569cc9cc6fc66e654838740.png'
 import poultryIcon from 'figma:asset/36269bc95e30a658e2dbcacea10d1ccc3ac7bec8.png';
 import { quickAnalyzeImage, DiagnosisResponse, TargetSpecies } from '../services/api';
 import { notificationService } from '../services/notifications';
+import { useLanguage } from '../i18n/LanguageContext';
+import { LanguageToggle } from './LanguageSwitcher';
+import { fishDiseaseName } from '../i18n/fish';
 
 export function Detection() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t, lang } = useLanguage();
   const type = (searchParams.get('type') || 'fish') as TargetSpecies;
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -74,7 +78,7 @@ export function Detection() {
       );
       setShowSuccessModal(true);
     } catch (err: unknown) {
-      setApiError(err instanceof Error ? err.message : 'Analysis failed. Please try again.');
+      setApiError(err instanceof Error ? err.message : t('det.errAnalysis'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -162,14 +166,17 @@ export function Detection() {
                 <img src={poultryIcon} alt="Poultry" className="w-8 h-8" />
               )}
               <h1 className="text-2xl font-bold text-gray-900">
-                {type === 'fish' ? 'Fish' : 'Poultry'} Disease Detection
+                {type === 'fish' ? t('det.titleFish') : 'Poultry Disease Detection'}
               </h1>
             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-            <LogOut className="w-5 h-5" />
-            <span>Logout</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
+              <LogOut className="w-5 h-5" />
+              <span>{t('common.logout')}</span>
+            </button>
+            <LanguageToggle />
+          </div>
         </div>
       </header>
 
@@ -182,18 +189,18 @@ export function Detection() {
           )}
 
           <h2 className="text-2xl font-bold text-gray-900">
-            Upload {type === 'fish' ? 'Fish' : 'Faeces'} Image
+            {type === 'fish' ? t('det.uploadFish') : 'Upload Faeces Image'}
           </h2>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Describe symptoms <span className="text-gray-400 font-normal">(optional)</span>
+              {t('det.symptoms')} <span className="text-gray-400 font-normal">{t('common.optional')}</span>
             </label>
             <textarea
               value={symptomsText}
               onChange={(e) => setSymptomsText(e.target.value)}
               rows={2}
-              placeholder="e.g. white spots on fins, loss of appetite..."
+              placeholder={t('det.symptomsPh')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
             />
           </div>
@@ -213,12 +220,12 @@ export function Detection() {
               onDrop={handleDrop}
             >
               <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-gray-700 mb-2">Drag and drop your image here, or click to select</p>
-              <p className="text-sm text-gray-500 mb-4">Supports: JPG, PNG (Max 10MB)</p>
+              <p className="text-lg text-gray-700 mb-2">{t('det.drag')}</p>
+              <p className="text-sm text-gray-500 mb-4">{t('det.supports')}</p>
               <label className="inline-block">
                 <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                 <span className="bg-green-600 text-white px-6 py-3 rounded-lg cursor-pointer hover:bg-green-700 transition-colors inline-block">
-                  Select Image
+                  {t('det.select')}
                 </span>
               </label>
             </div>
@@ -231,22 +238,22 @@ export function Detection() {
                   disabled={isAnalyzing}
                   className="flex-1 bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {isAnalyzing ? <><Loader2 className="w-6 h-6 animate-spin" />Analyzing...</> : 'Analyze for Diseases'}
+                  {isAnalyzing ? <><Loader2 className="w-6 h-6 animate-spin" />{t('det.analyzing')}</> : t('det.analyze')}
                 </button>
                 <button onClick={handleReset} className="bg-gray-200 text-gray-800 px-6 py-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold">
-                  Remove
+                  {t('det.remove')}
                 </button>
               </div>
             </div>
           )}
 
           <div className="p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Tips for Best Results:</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">{t('det.tips')}</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Ensure good lighting when taking the photo</li>
-              <li>• Keep the camera steady to avoid blurry images</li>
-              <li>• Capture the {type === 'fish' ? 'affected area clearly' : 'faeces sample from multiple angles'}</li>
-              <li>• Avoid shadows or reflections</li>
+              <li>• {t('det.tip1')}</li>
+              <li>• {t('det.tip2')}</li>
+              <li>• {type === 'fish' ? t('det.tip3Fish') : 'Capture the faeces sample from multiple angles'}</li>
+              <li>• {t('det.tip4')}</li>
             </ul>
           </div>
         </div>
@@ -258,10 +265,10 @@ export function Detection() {
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
               <CheckCircle className="h-10 w-10 text-green-600" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Image Upload Successful!</h3>
-            <p className="text-gray-600 mb-6">Your image has been uploaded and is being analyzed.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('det.uploadOk')}</h3>
+            <p className="text-gray-600 mb-6">{t('det.uploadOkDesc')}</p>
             <button onClick={handleSuccessOk} className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
-              OK
+              {t('common.ok')}
             </button>
           </div>
         </div>
@@ -284,18 +291,18 @@ export function Detection() {
                     />
                   </div>
                 )}
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">All Clear!</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('det.allClear')}</h3>
                 <p className="text-gray-600 mb-6">
                   {isAnalysisUnavailable
-                    ? 'AI analysis is not available right now. Please try again after the backend model is loaded.'
+                    ? t('det.unavailable')
                     : normalizedDiseaseCode === 'non_poultry' || normalizedDiseaseName === 'non_poultry'
                       ? 'This image does not appear to be poultry, so no poultry disease was detected.'
                       : normalizedDiseaseCode === 'not_fish' || normalizedDiseaseName === 'not_fish'
-                        ? 'This image does not appear to be a fish, so no fish disease was detected.'
-                        : 'No disease detected. Your animal appears healthy.'}
+                        ? t('det.notFish')
+                        : t('det.noDisease')}
                 </p>
                 <button onClick={handleDiseaseOk} className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
-                  OK
+                  {t('common.ok')}
                 </button>
               </>
             ) : (
@@ -312,13 +319,13 @@ export function Detection() {
                     />
                   </div>
                 )}
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">Disease Detected</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('det.diseaseDetected')}</h3>
                 <p className="text-xl font-bold text-red-600 mb-2 break-words leading-tight px-2">
-                  {disease.disease_name}
+                  {type === 'fish' ? fishDiseaseName(disease.disease_name, lang) : disease.disease_name}
                 </p>
-                <p className="text-sm text-gray-600">A disease was detected in this sample.</p>
+                <p className="text-sm text-gray-600">{t('det.diseaseDesc')}</p>
                 <button onClick={handleDiseaseOk} className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold mt-6">
-                  OK
+                  {t('common.ok')}
                 </button>
               </>
             )}
@@ -329,13 +336,13 @@ export function Detection() {
       {showTreatmentPromptModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 text-center">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Wanna see the treatment?</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">{t('det.seeTreatment')}</h3>
             <div className="flex gap-4">
               <button onClick={handleTreatmentYes} className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
-                Yes
+                {t('common.yes')}
               </button>
               <button onClick={() => { setShowTreatmentPromptModal(false); handleReset(); }} className="flex-1 bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors font-semibold">
-                No
+                {t('common.no')}
               </button>
             </div>
           </div>

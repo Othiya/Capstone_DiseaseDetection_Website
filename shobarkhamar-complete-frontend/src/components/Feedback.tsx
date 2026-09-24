@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, LogOut, Star, Send, CheckCircle, MessageSquareQuote } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
+import { LanguageToggle } from './LanguageSwitcher';
 
 interface StoredFeedback {
   rating: number;
@@ -13,6 +15,7 @@ const FEEDBACK_STORAGE_KEY = 'userFeedback';
 
 export function Feedback() {
   const navigate = useNavigate();
+  const { t, lang, locale } = useLanguage();
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [feedback, setFeedback] = useState('');
@@ -67,15 +70,18 @@ export function Feedback() {
               <Link to="/selection" className="text-gray-600 hover:text-gray-900">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Feedback & Rating</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('fb.title')}</h1>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>{t('common.logout')}</span>
+              </button>
+              <LanguageToggle />
+            </div>
           </div>
         </div>
       </header>
@@ -85,17 +91,17 @@ export function Feedback() {
           <div className="bg-white rounded-xl shadow-lg p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                We Value Your Feedback
+                {t('fb.heading')}
               </h2>
               <p className="text-gray-600">
-                Help us improve our disease detection service
+                {t('fb.sub')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
               <div>
                 <label className="block text-lg font-semibold text-gray-900 mb-4 text-center">
-                  How would you rate our service?
+                  {t('fb.rateQ')}
                 </label>
                 <div className="flex justify-center gap-2 mb-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -118,18 +124,18 @@ export function Feedback() {
                   ))}
                 </div>
                 <p className="text-center text-sm text-gray-600">
-                  {rating === 0 && 'Click to rate'}
-                  {rating === 1 && 'Poor'}
-                  {rating === 2 && 'Fair'}
-                  {rating === 3 && 'Good'}
-                  {rating === 4 && 'Very Good'}
-                  {rating === 5 && 'Excellent'}
+                  {rating === 0 && t('fb.r0')}
+                  {rating === 1 && t('fb.r1')}
+                  {rating === 2 && t('fb.r2')}
+                  {rating === 3 && t('fb.r3')}
+                  {rating === 4 && t('fb.r4')}
+                  {rating === 5 && t('fb.r5')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-lg font-semibold text-gray-900 mb-4">
-                  Share your experience with us
+                  {t('fb.share')}
                 </label>
                 <textarea
                   value={feedback}
@@ -137,11 +143,11 @@ export function Feedback() {
                   rows={6}
                   maxLength={500}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                  placeholder="Tell us what you think about our service, what we can improve, or any suggestions you have..."
+                  placeholder={t('fb.placeholder')}
                   required
                 />
                 <p className="mt-2 text-sm text-gray-600">
-                  {feedback.length} / 500 characters
+                  {t('fb.chars', { n: feedback.length })}
                 </p>
               </div>
 
@@ -152,13 +158,13 @@ export function Feedback() {
                   className="flex-1 bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   <Send className="w-5 h-5" />
-                  Submit Feedback
+                  {t('fb.submit')}
                 </button>
                 <Link
                   to="/selection"
                   className="flex-1 bg-gray-200 text-gray-800 px-6 py-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold text-center"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Link>
               </div>
             </form>
@@ -170,15 +176,15 @@ export function Feedback() {
                 <MessageSquareQuote className="w-5 h-5 text-blue-700" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">Previous Feedback</h3>
-                <p className="text-sm text-gray-500">Your earlier reviews stay here, and you can always add another one.</p>
+                <h3 className="text-2xl font-bold text-gray-900">{t('fb.previous')}</h3>
+                <p className="text-sm text-gray-500">{t('fb.previousSub')}</p>
               </div>
             </div>
 
             {feedbackHistory.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-                <p className="font-semibold text-gray-700">No feedback submitted yet</p>
-                <p className="text-sm text-gray-500 mt-1">Your submitted reviews will appear here.</p>
+                <p className="font-semibold text-gray-700">{t('fb.none')}</p>
+                <p className="text-sm text-gray-500 mt-1">{t('fb.noneSub')}</p>
               </div>
             ) : (
               <div className="space-y-4 max-h-[640px] overflow-y-auto pr-1">
@@ -188,7 +194,7 @@ export function Feedback() {
                       <div>
                         <p className="font-semibold text-gray-900">{entry.userName}</p>
                         <p className="text-xs text-gray-500">
-                          {new Date(entry.timestamp).toLocaleString()}
+                          {new Date(entry.timestamp).toLocaleString(lang === 'bn' ? locale : undefined)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
@@ -219,16 +225,16 @@ export function Feedback() {
                 <CheckCircle className="h-10 w-10 text-green-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Thank You!
+                {t('fb.thanks')}
               </h3>
               <p className="text-gray-600 mb-6">
-                Your feedback has been submitted successfully. You can add another review anytime.
+                {t('fb.thanksSub')}
               </p>
               <button
                 onClick={handleSuccessOk}
                 className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
               >
-                OK
+                {t('common.ok')}
               </button>
             </div>
           </div>

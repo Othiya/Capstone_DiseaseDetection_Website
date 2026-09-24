@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, LogOut, Clock, Fish, Bird, AlertCircle, FileText, Filter, Loader2 } from 'lucide-react';
 import { getHistory, DiagnosisResponse } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
+import { LanguageToggle } from './LanguageSwitcher';
+import { fishDiseaseName } from '../i18n/fish';
 
 export function History() {
   const navigate = useNavigate();
+  const { t, lang, locale, num } = useLanguage();
   const [filter, setFilter] = useState<'all' | 'fish' | 'poultry'>('all');
   const [diagnoses, setDiagnoses] = useState<DiagnosisResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +17,7 @@ export function History() {
   useEffect(() => {
     getHistory(0, 100)
       .then((data) => setDiagnoses(data.diagnoses))
-      .catch(() => setError('Could not load history. Make sure you are logged in.'))
+      .catch(() => setError('hist.error'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -40,11 +44,14 @@ export function History() {
               <Link to="/selection" className="text-gray-600 hover:text-gray-900">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">Diagnosis History</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('hist.title')}</h1>
             </div>
-            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-              <LogOut className="w-5 h-5" /><span>Logout</span>
-            </button>
+            <div className="flex items-center gap-4">
+              <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
+                <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
+              </button>
+              <LanguageToggle />
+            </div>
           </div>
         </div>
       </header>
@@ -54,7 +61,7 @@ export function History() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Clock className="w-8 h-8 text-gray-700" />
-              <h2 className="text-2xl font-bold text-gray-900">Your Diagnosis Records</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('hist.records')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-600" />
@@ -63,8 +70,8 @@ export function History() {
                 onChange={(e) => setFilter(e.target.value as 'all' | 'fish' | 'poultry')}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               >
-                <option value="all">All Records</option>
-                <option value="fish">Fish Only</option>
+                <option value="all">{t('hist.all')}</option>
+                <option value="fish">{t('common.fishOnly')}</option>
                 <option value="poultry">Poultry Only</option>
               </select>
             </div>
@@ -73,17 +80,17 @@ export function History() {
           {loading ? (
             <div className="flex items-center justify-center py-16 gap-3 text-gray-500">
               <Loader2 className="w-6 h-6 animate-spin" />
-              <span>Loading history...</span>
+              <span>{t('hist.loading')}</span>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{t('hist.error')}</div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-xl text-gray-600 mb-2">No diagnosis records found</p>
-              <p className="text-gray-500 mb-6">Start by uploading an image to diagnose diseases</p>
+              <p className="text-xl text-gray-600 mb-2">{t('hist.none')}</p>
+              <p className="text-gray-500 mb-6">{t('hist.noneSub')}</p>
               <Link to="/selection" className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
-                Start Diagnosis
+                {t('hist.start')}
               </Link>
             </div>
           ) : (
@@ -106,10 +113,10 @@ export function History() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {isFish ? 'Fish' : 'Poultry'} Diagnosis
+                            {isFish ? t('hist.fishDiag') : 'Poultry Diagnosis'}
                           </h3>
                           <span className="text-sm text-gray-500">
-                            {new Date(record.created_at).toLocaleDateString('en-US', {
+                            {new Date(record.created_at).toLocaleDateString(locale, {
                               year: 'numeric', month: 'long', day: 'numeric',
                             })}
                           </span>
@@ -118,7 +125,7 @@ export function History() {
                               ? 'bg-blue-100 text-blue-800'
                               : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {record.status === 'CLOSED' ? 'Closed' : 'Open'}
+                            {record.status === 'CLOSED' ? t('hist.closed') : t('hist.open')}
                           </span>
                         </div>
 
@@ -127,17 +134,17 @@ export function History() {
                             <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isHealthy ? 'text-green-600' : 'text-red-600'}`} />
                             <div>
                               <p className={`font-semibold ${isHealthy ? 'text-green-600' : 'text-red-600'}`}>
-                                {isHealthy ? 'Healthy' : disease.disease_name}
+                                {isHealthy ? t('common.healthy') : isFish ? fishDiseaseName(disease.disease_name, lang) : disease.disease_name}
                               </p>
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500 mb-3">No AI result available</p>
+                          <p className="text-sm text-gray-500 mb-3">{t('hist.noAi')}</p>
                         )}
 
                         {record.symptoms_text && (
                           <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-xs text-gray-500 mb-1">Symptoms noted</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('hist.symptoms')}</p>
                             <p className="text-sm text-gray-700">{record.symptoms_text}</p>
                           </div>
                         )}
@@ -152,19 +159,19 @@ export function History() {
 
         {!loading && !error && (
           <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Summary</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">{t('hist.summary')}</h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-blue-600">{recovered}</p>
-                <p className="text-sm text-blue-800">Closed</p>
+                <p className="text-2xl font-bold text-blue-600">{num(recovered)}</p>
+                <p className="text-sm text-blue-800">{t('hist.closed')}</p>
               </div>
               <div className="bg-yellow-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-yellow-600">{inProgress}</p>
-                <p className="text-sm text-yellow-800">In Progress</p>
+                <p className="text-2xl font-bold text-yellow-600">{num(inProgress)}</p>
+                <p className="text-sm text-yellow-800">{t('hist.inProgress')}</p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-gray-600">{diagnoses.length}</p>
-                <p className="text-sm text-gray-800">Total</p>
+                <p className="text-2xl font-bold text-gray-600">{num(diagnoses.length)}</p>
+                <p className="text-sm text-gray-800">{t('hist.total')}</p>
               </div>
             </div>
           </div>

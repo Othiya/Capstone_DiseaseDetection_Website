@@ -2,11 +2,14 @@ import { Link } from 'react-router';
 import { Fish, Bird, Microscope, Stethoscope, Search, Pill, BookOpen } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { LoginModal } from './LoginModal';
+import { useLanguage } from '../i18n/LanguageContext';
+import { LanguageToggle } from './LanguageSwitcher';
 import logoImage from 'figma:asset/7d3279b2af8dc97a9d0e82a307a6444d8edea422.png';
 import fishImage from 'figma:asset/62f52d45234fa34e0569cc9cc6fc66e654838740.png';
 import poultryImage from 'figma:asset/42eeaf1bf402682fb5a784bdf4ac8a449b212110.png';
 
 export function Home() {
+  const { t } = useLanguage();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [activeSection, setActiveSection] = useState(0);
@@ -62,7 +65,7 @@ export function Home() {
                 }`}
                 style={{ fontFamily: 'DM Sans' }}
               >
-                Shobar Khamar
+                {t('home.brand')}
               </span>
             </div>
             <nav className="hidden md:flex items-center gap-8">
@@ -72,7 +75,7 @@ export function Home() {
                   headerStyle === 'dark' ? 'text-white hover:text-green-300' : 'text-gray-900 hover:text-green-600'
                 }`}
               >
-                Home
+                {t('home.nav.home')}
               </Link>
               <button
                 onClick={openLogin}
@@ -80,7 +83,7 @@ export function Home() {
                   headerStyle === 'dark' ? 'text-white/80 hover:text-green-300' : 'text-gray-600 hover:text-green-600'
                 }`}
               >
-                Diagnose tool
+                {t('home.nav.diagnose')}
               </button>
               <Link
                 to="/about"
@@ -88,7 +91,7 @@ export function Home() {
                   headerStyle === 'dark' ? 'text-white/80 hover:text-green-300' : 'text-gray-600 hover:text-green-600'
                 }`}
               >
-                About us
+                {t('home.nav.about')}
               </Link>
             </nav>
             <div className="flex items-center gap-4">
@@ -98,7 +101,7 @@ export function Home() {
                   headerStyle === 'dark' ? 'text-white/80 hover:text-green-300' : 'text-gray-600 hover:text-green-600'
                 }`}
               >
-                Register
+                {t('common.register')}
               </button>
               <button
                 onClick={openLogin}
@@ -108,8 +111,9 @@ export function Home() {
                     : 'bg-green-600 text-white hover:bg-green-700'
                 }`}
               >
-                Login
+                {t('common.login')}
               </button>
+              <LanguageToggle tone={headerStyle === 'dark' ? 'dark' : 'light'} />
             </div>
           </div>
         </div>
@@ -123,21 +127,21 @@ export function Home() {
         </div>
         <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center pt-20">
           <div className="max-w-3xl animate-fade-in">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">Welcome to shobarkhamar</h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-4">Diagnostic software for fish and poultry diseases</p>
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">{t('home.hero.title')}</h1>
+            <p className="text-xl md:text-2xl text-white/90 mb-4">{t('home.hero.subtitle')}</p>
             <p className="text-lg text-white/80 mb-8 max-w-2xl">
-              Diagnose parasitic, bacterial, viral, nutritional and health problems in tropical fish and poultry with AI-powered analysis.
+              {t('home.hero.desc')}
             </p>
             <button
               onClick={openLogin}
               className="inline-block bg-transparent border-2 border-white text-white px-10 py-4 rounded-lg hover:bg-white hover:text-green-700 transition-all text-lg font-semibold shadow-lg hover:shadow-xl"
             >
-              GET STARTED
+              {t('home.getStarted')}
             </button>
           </div>
         </div>
         <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="text-white text-sm">Scroll to explore</div>
+          <div className="text-white text-sm">{t('home.scroll')}</div>
           <div className="w-6 h-10 border-2 border-white rounded-full mx-auto mt-2 flex items-start justify-center p-2">
             <div className="w-1 h-3 bg-white rounded-full animate-scroll"></div>
           </div>
@@ -154,14 +158,14 @@ export function Home() {
                 <Search className="w-16 h-16 text-white" />
               </div>
             </div>
-            <h2 className="text-5xl font-bold text-white mb-6">Find disease</h2>
+            <h2 className="text-5xl font-bold text-white mb-6">{t('home.find.title')}</h2>
             <p className="text-xl text-white/90 mb-6">
-              Use our diagnose tool to search in a comprehensive database of symptoms and diseases for both fish and poultry health issues.
+              {t('home.find.desc')}
             </p>
             <div className="flex gap-4">
               <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
                 <Fish className="w-8 h-8 text-blue-300" />
-                <span className="text-white font-medium">Fish Diseases</span>
+                <span className="text-white font-medium">{t('common.fishDiseases')}</span>
               </div>
               <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
                 <Bird className="w-8 h-8 text-green-300" />
@@ -182,14 +186,14 @@ export function Home() {
                 <Pill className="w-16 h-16 text-white" />
               </div>
             </div>
-            <h2 className="text-5xl font-bold text-white mb-6">Treat your livestock</h2>
+            <h2 className="text-5xl font-bold text-white mb-6">{t('home.treat.title')}</h2>
             <p className="text-xl text-white/90 mb-6">
-              Get disease treatments which may include medicines, water treatment, dietary recommendations and prevention strategies.
+              {t('home.treat.desc')}
             </p>
             <div className="flex gap-4">
               <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
                 <Stethoscope className="w-8 h-8 text-red-300" />
-                <span className="text-white font-medium">Expert Treatment Plans</span>
+                <span className="text-white font-medium">{t('home.treat.badge')}</span>
               </div>
             </div>
           </div>
@@ -209,21 +213,21 @@ export function Home() {
                 <BookOpen className="w-16 h-16 text-white" />
               </div>
             </div>
-            <h2 className="text-5xl font-bold text-white mb-6">Learn more</h2>
+            <h2 className="text-5xl font-bold text-white mb-6">{t('home.learn.title')}</h2>
             <p className="text-xl text-white/90 mb-6">
-              Browse our extensive list of fish and poultry diseases to find out more about causes, prognosis and treatment options.
+              {t('home.learn.desc')}
             </p>
             <div className="flex gap-4">
               <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
                 <Microscope className="w-8 h-8 text-purple-300" />
-                <span className="text-white font-medium">Research Database</span>
+                <span className="text-white font-medium">{t('home.learn.badge')}</span>
               </div>
             </div>
             <Link
               to="/disease-database"
               className="inline-block mt-6 bg-white text-purple-900 px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg"
             >
-              Browse Disease Database →
+              {t('home.learn.browse')}
             </Link>
           </div>
         </div>
@@ -232,7 +236,7 @@ export function Home() {
       {/* Footer */}
       <footer className="bg-gray-50 py-8 border-t">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600">
-          <p className="text-lg">© 2026 shobarkhamar. Helping farmers maintain healthy livestock.</p>
+          <p className="text-lg">{t('home.footer')}</p>
         </div>
       </footer>
 
