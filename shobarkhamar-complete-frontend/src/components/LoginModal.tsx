@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { X, Loader2 } from 'lucide-react';
 import { loginUser, registerUser } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface LoginModalProps {
   onClose: () => void;
@@ -10,6 +11,7 @@ interface LoginModalProps {
 
 export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(!startOnRegister);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,7 +47,7 @@ export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps
       onClose();
       navigate('/selection');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      const message = err instanceof Error ? err.message : t('login.error');
       setError(message);
     } finally {
       setIsLoading(false);
@@ -63,7 +65,7 @@ export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps
         </button>
 
         <h2 className="text-3xl font-bold text-gray-900 mb-6">
-          {isLogin ? 'Welcome Back' : 'Create Account'}
+          {isLogin ? t('login.welcomeBack') : t('login.createAccount')}
         </h2>
 
         {error && (
@@ -77,40 +79,40 @@ export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+                  {t('common.fullName')}
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter your name"
+                  placeholder={t('login.namePh')}
                   required={!isLogin}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
+                  {t('common.phone')}
                 </label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter your phone number"
+                  placeholder={t('login.phonePh')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
+                  {t('common.address')}
                 </label>
                 <textarea
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter your address"
+                  placeholder={t('login.addressPh')}
                   rows={2}
                 />
               </div>
@@ -119,34 +121,34 @@ export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              {t('login.email')}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Enter your email"
+              placeholder={t('login.emailPh')}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              {t('login.password')}
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Enter your password"
+              placeholder={t('login.passwordPh')}
               required
             />
             {!isLogin && (
               <p className="text-xs text-gray-500 mt-1">
-                Min 8 characters, must include uppercase, lowercase and a number.
-                <br/>Example: <span className="font-mono">MyPass123</span>
+                {t('login.passwordHint')}
+                <br/>{t('login.example')} <span className="font-mono">MyPass123</span>
               </p>
             )}
           </div>
@@ -159,10 +161,10 @@ export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                {isLogin ? 'Logging in...' : 'Creating account...'}
+                {isLogin ? t('login.loggingIn') : t('login.creating')}
               </>
             ) : (
-              isLogin ? 'Login' : 'Register'
+              isLogin ? t('common.login') : t('common.register')
             )}
           </button>
         </form>
@@ -173,8 +175,8 @@ export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps
             className="text-green-600 hover:text-green-700 font-medium"
           >
             {isLogin
-              ? "Don't have an account? Register"
-              : 'Already have an account? Login'}
+              ? t('login.toRegister')
+              : t('login.toLogin')}
           </button>
         </div>
       </div>

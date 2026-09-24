@@ -6,6 +6,8 @@ import poultryImage from 'figma:asset/42eeaf1bf402682fb5a784bdf4ac8a449b212110.p
 import { getHistory, getToken } from '../services/api';
 import { notificationService } from '../services/notifications';
 import { getStoredIds, DISMISSED_STORAGE_KEY, READ_STORAGE_KEY, isClearedNotification } from '../utils/notifications';
+import { useLanguage } from '../i18n/LanguageContext';
+import { LanguageToggle } from './LanguageSwitcher';
 
 const SYSTEM_NOTIFICATIONS = [
   { id: 'sys-1', read: false },
@@ -14,7 +16,8 @@ const SYSTEM_NOTIFICATIONS = [
 
 export function Selection() {
   const navigate = useNavigate();
-  const userName = localStorage.getItem('userName') || 'User';
+  const { t, num } = useLanguage();
+  const userName = localStorage.getItem('userName') || t('common.user');
   const [unreadCount, setUnreadCount] = useState(0);
 
   const loadUnreadCount = async () => {
@@ -73,13 +76,16 @@ export function Selection() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between">
           <div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-sm text-gray-600">Welcome back, {userName}</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('sel.dashboard')}</h1>
+              <p className="text-sm text-gray-600">{t('sel.welcome', { name: userName })}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-            <LogOut className="w-5 h-5" /><span>Logout</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
+              <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
+            </button>
+            <LanguageToggle />
+          </div>
         </div>
       </header>
 
@@ -87,40 +93,40 @@ export function Selection() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <Link to="/profile" className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col items-center gap-2 text-center">
             <User className="w-8 h-8 text-green-600" />
-            <span className="text-sm font-medium text-gray-900">My Profile</span>
+            <span className="text-sm font-medium text-gray-900">{t('sel.profile')}</span>
           </Link>
 
           <Link to="/notifications" className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col items-center gap-2 text-center relative">
             <Bell className="w-8 h-8 text-yellow-600" />
-            <span className="text-sm font-medium text-gray-900">Notifications</span>
+            <span className="text-sm font-medium text-gray-900">{t('sel.notifications')}</span>
             {unreadCount > 0 && (
               <span className="absolute top-2 right-2 bg-red-600 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center">
-                {unreadCount > 99 ? '99+' : unreadCount}
+                {unreadCount > 99 ? num('99+') : num(unreadCount)}
               </span>
             )}
           </Link>
 
           <Link to="/disease-database" className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col items-center gap-2 text-center">
             <BookOpen className="w-8 h-8 text-indigo-600" />
-            <span className="text-sm font-medium text-gray-900">Diseases</span>
+            <span className="text-sm font-medium text-gray-900">{t('sel.diseases')}</span>
           </Link>
 
           <Link to="/feedback" className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col items-center gap-2 text-center">
             <MessageSquare className="w-8 h-8 text-orange-600" />
-            <span className="text-sm font-medium text-gray-900">Feedback</span>
+            <span className="text-sm font-medium text-gray-900">{t('sel.feedback')}</span>
           </Link>
 
           <Link to="/about" className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow flex flex-col items-center gap-2 text-center">
             <Building2 className="w-8 h-8 text-purple-600" />
-            <span className="text-sm font-medium text-gray-900">About</span>
+            <span className="text-sm font-medium text-gray-900">{t('sel.about')}</span>
           </Link>
         </div>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 pb-12 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Choose What You Want to Diagnose</h2>
-          <p className="text-xl text-gray-600">Select fish or poultry to begin disease detection</p>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">{t('sel.title')}</h2>
+          <p className="text-xl text-gray-600">{t('sel.subtitle')}</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -134,8 +140,8 @@ export function Selection() {
               <div className="bg-blue-500 rounded-full p-6 mb-4 group-hover:bg-blue-600 transition-colors">
                 <Fish className="w-12 h-12 text-white" />
               </div>
-              <h3 className="text-3xl font-bold text-white mb-2">Fish</h3>
-              <p className="text-white/90 text-center">Diagnose diseases in fish by uploading images</p>
+              <h3 className="text-3xl font-bold text-white mb-2">{t('sel.fish')}</h3>
+              <p className="text-white/90 text-center">{t('sel.fishDesc')}</p>
             </div>
           </Link>
 

@@ -12,6 +12,11 @@ import {
   DISMISSED_STORAGE_KEY, getStoredIds,
   READ_STORAGE_KEY, isClearedNotification, setClearedAt, storeIds,
 } from '../utils/notifications';
+import { useLanguage } from '../i18n/LanguageContext';
+import { LanguageToggle } from './LanguageSwitcher';
+import { fishDiseaseName } from '../i18n/fish';
+
+type Translate = ReturnType<typeof useLanguage>['t'];
 
 type NotifKind = 'disease' | 'healthy' | 'system' | 'info';
 
@@ -114,19 +119,20 @@ function kindStyles(kind: NotifKind, read: boolean) {
   }
 }
 
-function timeAgo(date: Date): string {
+function timeAgo(date: Date, t: Translate, locale: string | undefined): string {
   const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t('notif.justNow');
+  if (mins < 60) return t('notif.minsAgo', { n: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return t('notif.hoursAgo', { n: hrs });
   const days = Math.floor(hrs / 24);
-  return days < 7 ? `${days}d ago` : date.toLocaleDateString();
+  return days < 7 ? t('notif.daysAgo', { n: days }) : date.toLocaleDateString(locale);
 }
 
 export function Notifications() {
   const navigate = useNavigate();
+  const { t, lang, locale, num } = useLanguage();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -207,11 +213,33 @@ export function Notifications() {
   const clearAll = () => {
     setClearedAt(Date.now());
     setNotifications([]);
-    setSuccessMessage('All previous notifications cleared. New diagnosis notifications will still appear here.');
+    setSuccessMessage(t('notif.cleared'));
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Fish and system notifications are shown in the chosen language; poultry ones stay in English.
+  const localize = (n: Notification): { title: string; message: string } => {
+    if (lang === 'en') return { title: n.title, message: n.message };
+    if (n.id === 'sys-1') return { title: t('notif.sys1Title'), message: t('notif.sys1Msg') };
+    if (n.id === 'info-1') return { title: t('notif.info1Title'), message: t('notif.info1Msg') };
+    if (n.species !== 'fish') return { title: n.title, message: n.message };
+    const isLocal = n.id.startsWith('notif_');
+    const name = fishDiseaseName(n.diseaseName, lang);
+    if (n.kind === 'disease') {
+      return {
+        title: t('notif.fishDiseaseTitle', { name }),
+        message: isLocal ? t('notif.fishDiseaseLocalMsg') : t('notif.fishDiseaseMsg', { name }),
+      };
+    }
+    if (n.kind === 'healthy') {
+      return isLocal
+        ? { title: t('notif.fishHealthyLocalTitle'), message: t('notif.fishHealthyLocalMsg') }
+        : { title: t('notif.fishHealthyTitle'), message: t('notif.fishHealthyMsg', { date: n.timestamp.toLocaleDateString(locale) }) };
+    }
+    return { title: n.title, message: n.message };
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-blue-50">
@@ -224,16 +252,19 @@ export function Notifications() {
                 <Bell className="w-6 h-6 text-gray-900" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? num('9+') : num(unreadCount)}
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('sel.notifications')}</h1>
             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-            <LogOut className="w-5 h-5" /><span>Logout</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
+              <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
+            </button>
+            <LanguageToggle />
+          </div>
         </div>
       </header>
 
@@ -241,37 +272,37 @@ export function Notifications() {
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              Your Notifications
-              {unreadCount > 0 && <span className="ml-3 text-sm font-normal text-gray-500">({unreadCount} unread)</span>}
+              {t('notif.yours')}
+              {unreadCount > 0 && <span className="ml-3 text-sm font-normal text-gray-500">{t('notif.unread', { n: unreadCount })}</span>}
             </h2>
             <div className="flex gap-3 items-center">
               <button onClick={() => loadNotifications(true)} disabled={refreshing}
                 className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
-                <Loader2 className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
+                <Loader2 className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> {t('notif.refresh')}
               </button>
               {unreadCount > 0 && (
-                <button onClick={markAllRead} className="text-sm text-green-600 hover:text-green-700 font-medium">Mark all read</button>
+                <button onClick={markAllRead} className="text-sm text-green-600 hover:text-green-700 font-medium">{t('notif.markAll')}</button>
               )}
               {notifications.length > 0 && (
                 <button onClick={clearAll} className="text-sm text-red-500 hover:text-red-600 font-medium flex items-center gap-1">
-                  <Trash2 className="w-4 h-4" /> Clear all
+                  <Trash2 className="w-4 h-4" /> {t('notif.clearAll')}
                 </button>
               )}
             </div>
           </div>
 
-          {error && <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm">{error}</div>}
+          {error && <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm">{t('notif.loadError')}</div>}
           {successMessage && <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">{successMessage}</div>}
 
           {loading ? (
             <div className="flex items-center justify-center py-16 gap-3 text-gray-400">
-              <Loader2 className="w-6 h-6 animate-spin" /><span>Loading notifications...</span>
+              <Loader2 className="w-6 h-6 animate-spin" /><span>{t('notif.loading')}</span>
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-16">
               <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-xl text-gray-500 mb-2">No notifications yet</p>
-              <p className="text-gray-400 text-sm">Notifications appear here after each diagnosis</p>
+              <p className="text-xl text-gray-500 mb-2">{t('notif.none')}</p>
+              <p className="text-gray-400 text-sm">{t('notif.noneSub')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -287,26 +318,26 @@ export function Notifications() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <h3 className={`text-gray-900 ${!n.read ? 'font-bold' : 'font-medium'}`}>
-                          {n.title}
+                          {localize(n).title}
                           {!n.read && <span className="ml-2 inline-block w-2 h-2 bg-green-500 rounded-full align-middle" />}
                         </h3>
                         <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-                          <Clock className="w-3 h-3" /><span>{timeAgo(n.timestamp)}</span>
+                          <Clock className="w-3 h-3" /><span>{timeAgo(n.timestamp, t, lang === 'bn' ? locale : undefined)}</span>
                         </div>
                       </div>
-                      <p className="mt-1 text-sm text-gray-600">{n.message}</p>
+                      <p className="mt-1 text-sm text-gray-600">{localize(n).message}</p>
                       <div className="mt-2 flex gap-3">
                         {n.kind === 'disease' && (
                           <button onClick={(e) => {
                             e.stopPropagation(); markAsRead(n.id);
                             navigate('/treatment', { state: { type: n.species, disease: n.diseaseName, diagnosisId: n.diagnosisId } });
                           }} className="text-xs font-semibold text-red-600 hover:text-red-700 underline underline-offset-2 flex items-center gap-1">
-                            <Microscope className="w-3 h-3" /> View treatment
+                            <Microscope className="w-3 h-3" /> {t('notif.viewTreatment')}
                           </button>
                         )}
                         {n.kind === 'healthy' && (
                           <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Healthy
+                            <CheckCircle2 className="w-3.5 h-3.5" /> {t('common.healthy')}
                           </span>
                         )}
                       </div>

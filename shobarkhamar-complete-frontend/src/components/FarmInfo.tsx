@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { ArrowLeft, LogOut, Fish, Bird, Save, Loader2 } from 'lucide-react';
 import { createFarm } from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext';
+import { LanguageToggle } from './LanguageSwitcher';
 
 export function FarmInfo() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type') || 'fish';
 
@@ -23,7 +26,7 @@ export function FarmInfo() {
 
   const handleSave = async () => {
     if (!farmName.trim()) {
-      setError('Please enter a farm name.');
+      setError(t('farm.errName'));
       return;
     }
 
@@ -41,7 +44,7 @@ export function FarmInfo() {
       // Farm created — go straight to detection
       navigate(`/detection?type=${type}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create farm. Please try again.');
+      setError(err instanceof Error ? err.message : t('farm.errCreate'));
     } finally {
       setIsLoading(false);
     }
@@ -63,16 +66,19 @@ export function FarmInfo() {
                   ? <Fish className="w-6 h-6 text-blue-600" />
                   : <Bird className="w-6 h-6 text-green-600" />}
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {type === 'fish' ? 'Fish' : 'Poultry'} Farm Information
+                  {type === 'fish' ? t('farm.titleFish') : 'Poultry Farm Information'}
                 </h1>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
-            >
-              <LogOut className="w-5 h-5" /><span>Logout</span>
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
+              >
+                <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
+              </button>
+              <LanguageToggle />
+            </div>
           </div>
         </div>
       </header>
@@ -80,10 +86,10 @@ export function FarmInfo() {
       <main className="max-w-3xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Register your {type === 'fish' ? 'fish' : 'poultry'} farm
+            {type === 'fish' ? t('farm.registerFish') : 'Register your poultry farm'}
           </h2>
           <p className="text-gray-500 text-sm mb-6">
-            You need a farm registered before running a disease detection.
+            {t('farm.needFarm')}
           </p>
 
           {error && (
@@ -96,42 +102,42 @@ export function FarmInfo() {
             {/* Farm Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Farm Name <span className="text-red-500">*</span>
+                {t('farm.name')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={farmName}
                 onChange={(e) => setFarmName(e.target.value)}
                 className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-${accentColor}-500`}
-                placeholder={type === 'fish' ? 'e.g., Dhaka Fish Farm' : 'e.g., Dhaka Poultry Farm'}
+                placeholder={type === 'fish' ? t('farm.namePhFish') : 'e.g., Dhaka Poultry Farm'}
               />
             </div>
 
             {/* Address */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Address <span className="text-gray-400 font-normal">(optional)</span>
+                {t('common.address')} <span className="text-gray-400 font-normal">{t('common.optional')}</span>
               </label>
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-${accentColor}-500`}
-                placeholder="e.g., Dhaka, Bangladesh"
+                placeholder={t('farm.addressPh')}
               />
             </div>
 
             {/* Area Size */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Area Size (acres) <span className="text-gray-400 font-normal">(optional)</span>
+                {t('farm.area')} <span className="text-gray-400 font-normal">{t('common.optional')}</span>
               </label>
               <input
                 type="number"
                 value={areaSize}
                 onChange={(e) => setAreaSize(e.target.value)}
                 className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-${accentColor}-500`}
-                placeholder="e.g., 5"
+                placeholder={t('farm.areaPh')}
                 min="0"
                 step="0.1"
               />
@@ -145,21 +151,20 @@ export function FarmInfo() {
               className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {isLoading
-                ? <><Loader2 className="w-5 h-5 animate-spin" />Creating Farm...</>
-                : <><Save className="w-5 h-5" />Save & Continue</>}
+                ? <><Loader2 className="w-5 h-5 animate-spin" />{t('farm.creating')}</>
+                : <><Save className="w-5 h-5" />{t('farm.save')}</>}
             </button>
             <button
               onClick={() => navigate(`/detection?type=${type}`)}
               className="bg-gray-200 text-gray-800 px-6 py-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
             >
-              Skip
+              {t('farm.skip')}
             </button>
           </div>
 
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>Note:</strong> A farm must be registered before you can run disease detection.
-              You only need to do this once — next time just click Skip.
+              <strong>{t('farm.noteLabel')}</strong> {t('farm.note')}
             </p>
           </div>
         </div>
