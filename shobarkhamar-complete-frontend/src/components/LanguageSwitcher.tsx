@@ -16,7 +16,7 @@ export function LanguageChooser() {
     fontSize: 20,
     fontWeight: 600,
     cursor: 'pointer',
-    border: '2px solid #16a34a',
+    border: '2px solid #3e9caf',
   };
 
   return (
@@ -29,9 +29,9 @@ export function LanguageChooser() {
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       }}
     >
-      <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: '100%', maxWidth: 420, textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
-        <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <Languages style={{ width: 28, height: 28, color: '#16a34a' }} />
+      <div style={{ background: '#fff', borderRadius: 28, padding: 32, width: '100%', maxWidth: 420, textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#dff6f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <Languages style={{ width: 28, height: 28, color: '#3e9caf' }} />
         </div>
         <h2 id="language-chooser-title" style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4, fontFamily: "'Hind Siliguri', sans-serif" }}>
           ভাষা নির্বাচন করুন
@@ -40,11 +40,11 @@ export function LanguageChooser() {
         <div style={{ display: 'flex', gap: 12 }}>
           <button
             onClick={() => setLang('bn')}
-            style={{ ...buttonStyle, background: '#16a34a', color: '#fff', fontFamily: "'Hind Siliguri', sans-serif" }}
+            style={{ ...buttonStyle, background: '#3e9caf', color: '#fff', fontFamily: "'Hind Siliguri', sans-serif" }}
           >
             বাংলা
           </button>
-          <button onClick={() => setLang('en')} style={{ ...buttonStyle, background: '#fff', color: '#166534' }}>
+          <button onClick={() => setLang('en')} style={{ ...buttonStyle, background: '#fff', color: '#277789' }}>
             English
           </button>
         </div>

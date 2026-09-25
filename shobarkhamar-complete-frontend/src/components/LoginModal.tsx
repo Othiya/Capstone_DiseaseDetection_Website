@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { X, Loader2 } from 'lucide-react';
 import { loginUser, registerUser } from '../services/api';
@@ -11,7 +11,26 @@ interface LoginModalProps {
 
 export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps) {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.focus();
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab') return;
+      const items = dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href], select, textarea');
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', keyboard);
+    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener('keydown', keyboard); previousFocus?.focus(); };
+  }, [onClose]);
+  const { t, lang } = useLanguage();
   const [isLogin, setIsLogin] = useState(!startOnRegister);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,15 +75,16 @@ export function LoginModal({ onClose , startOnRegister = false}: LoginModalProps
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 relative max-h-[90vh] overflow-y-auto">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="login-title" tabIndex={-1} className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 relative max-h-[90vh] overflow-y-auto">
         <button
+          aria-label={lang === 'bn' ? 'বন্ধ করুন' : 'Close'}
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
         >
           <X className="w-6 h-6" />
         </button>
 
-        <h2 className="text-3xl font-bold text-gray-900 mb-6">
+        <h2 id="login-title" className="text-3xl font-bold text-gray-900 mb-6">
           {isLogin ? t('login.welcomeBack') : t('login.createAccount')}
         </h2>
 

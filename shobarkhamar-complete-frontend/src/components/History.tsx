@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, LogOut, Clock, Fish, Bird, AlertCircle, FileText, Filter, Loader2 } from 'lucide-react';
 import { getHistory, DiagnosisResponse } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 import { fishDiseaseName } from '../i18n/fish';
 
 export function History() {
@@ -45,12 +44,6 @@ export function History() {
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">{t('hist.title')}</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-                <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
-              </button>
-              <LanguageToggle />
             </div>
           </div>
         </div>

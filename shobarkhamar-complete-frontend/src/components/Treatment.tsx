@@ -6,7 +6,6 @@ import fishSampleImage from 'figma:asset/81061a8ea05a453e7b182b6e9e85ca8c1777b80
 import poultrySampleImage from 'figma:asset/dfc44b2571f492b90efd940d77993d9db48d5a82.png';
 import { API_ORIGIN, getDiagnosis } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 import type { StringKey } from '../i18n/strings';
 import { fishDiseaseName, FISH_TREATMENTS_BN } from '../i18n/fish';
 
@@ -295,12 +294,6 @@ export function Treatment() {
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">{t('trt.header')}</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-              <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
-            </button>
-            <LanguageToggle />
           </div>
         </div>
       </header>

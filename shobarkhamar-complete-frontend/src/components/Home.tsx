@@ -1,261 +1,369 @@
-import { Link } from 'react-router';
-import { Fish, Bird, Microscope, Stethoscope, Search, Pill, BookOpen } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { LoginModal } from './LoginModal';
-import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
-import logoImage from 'figma:asset/7d3279b2af8dc97a9d0e82a307a6444d8edea422.png';
-import fishImage from 'figma:asset/62f52d45234fa34e0569cc9cc6fc66e654838740.png';
-import poultryImage from 'figma:asset/42eeaf1bf402682fb5a784bdf4ac8a449b212110.png';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import {
+  ArrowRight,
+  Bird,
+  BookOpen,
+  Camera,
+  Check,
+  Fish,
+  Heart,
+  Search,
+  ShieldCheck,
+  Sprout,
+  Stethoscope,
+  User,
+} from "lucide-react";
+import { LoginModal } from "./LoginModal";
+import { useLanguage } from "../i18n/LanguageContext";
+import { getToken } from "../services/api";
+import fishImage from "figma:asset/62f52d45234fa34e0569cc9cc6fc66e654838740.png";
+import poultryImage from "figma:asset/42eeaf1bf402682fb5a784bdf4ac8a449b212110.png";
 
-export function Home() {
-  const { t } = useLanguage();
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [activeSection, setActiveSection] = useState(0);
-  const [headerStyle, setHeaderStyle] = useState('light');
-  const sectionsRef = useRef([]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const index = sectionsRef.current.indexOf(entry.target);
-            if (index !== -1) setActiveSection(index);
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-    sectionsRef.current.forEach((section) => { if (section) observer.observe(section); });
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      const heroHeight = window.innerHeight;
-      setHeaderStyle(scrollPosition < heroHeight * 4 - 100 ? 'dark' : 'light');
-    };
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const openLogin = () => { setShowRegister(false); setShowLoginModal(true); };
-  const openRegister = () => { setShowRegister(true); setShowLoginModal(true); };
-  const closeModal = () => { setShowLoginModal(false); setShowRegister(false); };
+export function Home({ dashboard = false }: { dashboard?: boolean }) {
+  const { lang, t } = useLanguage();
+  const navigate = useNavigate();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const copy = (en: string, bn: string) => (lang === "bn" ? bn : en);
+  const start = (type: string) =>
+    getToken() ? navigate(`/farm-info?type=${type}`) : setLoginOpen(true);
+  const services = [
+    {
+      title: copy("Fish care", "মাছের যত্ন"),
+      description: copy(
+        "Check your fish’s health",
+        "মাছের স্বাস্থ্য পরীক্ষা করুন",
+      ),
+      icon: Fish,
+      color: "aqua",
+      action: () => start("fish"),
+    },
+    {
+      title: copy("Poultry care", "পোলট্রির যত্ন"),
+      description: copy(
+        "A healthier flock starts here",
+        "সুস্থ থাকুক আপনার পোলট্রি",
+      ),
+      icon: Bird,
+      color: "cream",
+      action: () => start("poultry"),
+    },
+    {
+      title: copy("Diagnosis history", "পরীক্ষার ইতিহাস"),
+      description: copy(
+        "Keep track of their wellbeing",
+        "আগের পরীক্ষার ফলাফল দেখুন",
+      ),
+      icon: Heart,
+      color: "lilac",
+      action: () => navigate("/history"),
+    },
+    {
+      title: copy("Disease guide", "রোগের তথ্য"),
+      description: copy(
+        "Understand symptoms & care",
+        "লক্ষণ ও যত্ন সম্পর্কে জানুন",
+      ),
+      icon: Stethoscope,
+      color: "lavender",
+      action: () => navigate("/disease-database"),
+    },
+    {
+      title: copy("Your profile", "আপনার প্রোফাইল"),
+      description: copy(
+        "Your details, in one place",
+        "আপনার সব তথ্য এক জায়গায়",
+      ),
+      icon: User,
+      color: "rose",
+      action: () => (getToken() ? navigate("/profile") : setLoginOpen(true)),
+    },
+    {
+      title: copy("About our care", "আমাদের সম্পর্কে"),
+      description: copy(
+        "Get to know Shobar Khamar",
+        "সবার খামার সম্পর্কে জানুন",
+      ),
+      icon: Sprout,
+      color: "mint",
+      action: () => navigate("/about"),
+    },
+  ];
+  const filteredServices = services.filter((item) =>
+    `${item.title} ${item.description}`
+      .toLocaleLowerCase()
+      .includes(query.toLocaleLowerCase().trim()),
+  );
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <header className={`border-b fixed top-0 w-full z-50 transition-all duration-300 ${
-        headerStyle === 'dark'
-          ? 'bg-black/30 backdrop-blur-md border-white/20'
-          : 'bg-white/95 backdrop-blur-sm border-gray-200 shadow-sm'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-3">
-              <img src={logoImage} className="w-12 h-12" alt="Logo" />
-              <span
-                className={`text-3xl font-medium transition-colors duration-300 ${
-                  headerStyle === 'dark' ? 'text-white' : 'text-slate-900'
-                }`}
-                style={{ fontFamily: 'DM Sans' }}
-              >
-                {t('home.brand')}
-              </span>
-            </div>
-            <nav className="hidden md:flex items-center gap-8">
-              <Link
-                to="/"
-                className={`font-medium transition-colors ${
-                  headerStyle === 'dark' ? 'text-white hover:text-green-300' : 'text-gray-900 hover:text-green-600'
-                }`}
-              >
-                {t('home.nav.home')}
-              </Link>
-              <button
-                onClick={openLogin}
-                className={`transition-colors ${
-                  headerStyle === 'dark' ? 'text-white/80 hover:text-green-300' : 'text-gray-600 hover:text-green-600'
-                }`}
-              >
-                {t('home.nav.diagnose')}
-              </button>
-              <Link
-                to="/about"
-                className={`transition-colors ${
-                  headerStyle === 'dark' ? 'text-white/80 hover:text-green-300' : 'text-gray-600 hover:text-green-600'
-                }`}
-              >
-                {t('home.nav.about')}
-              </Link>
-            </nav>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={openRegister}
-                className={`font-medium transition-colors ${
-                  headerStyle === 'dark' ? 'text-white/80 hover:text-green-300' : 'text-gray-600 hover:text-green-600'
-                }`}
-              >
-                {t('common.register')}
-              </button>
-              <button
-                onClick={openLogin}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  headerStyle === 'dark'
-                    ? 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                }`}
-              >
-                {t('common.login')}
-              </button>
-              <LanguageToggle tone={headerStyle === 'dark' ? 'dark' : 'light'} />
-            </div>
-          </div>
+    <main className="home-content">
+      <div className="welcome-row">
+        <div>
+          <p className="eyebrow">
+            {copy(
+              "YOUR EVERYDAY FARM COMPANION",
+              "আপনার খামারের নিত্যদিনের সঙ্গী",
+            )}
+          </p>
+          <h1>
+            {dashboard
+              ? copy(
+                  `Good to see you, ${localStorage.getItem("userName") || "farmer"}.`,
+                  `স্বাগতম, ${localStorage.getItem("userName") || "খামারি"}।`,
+                )
+              : copy(
+                  "A happy farm starts with care.",
+                  "যত্নেই ভালো থাকে আপনার খামার।",
+                )}
+          </h1>
         </div>
-      </header>
+        <span className="care-label">
+          <span />
+          {copy("Made for our farmers", "আমাদের খামারিদের জন্য")}
+        </span>
+      </div>
 
-      {/* Hero Section */}
-      <div className="relative h-screen bg-gradient-to-r from-blue-900/70 to-green-900/70 overflow-hidden">
-        <div className="absolute inset-0 grid grid-cols-2">
-          <div className="bg-cover bg-center opacity-50" style={{ backgroundImage: `url(${fishImage})` }} />
-          <div className="bg-cover bg-center opacity-50" style={{ backgroundImage: `url(${poultryImage})` }} />
+      <section className="care-banner" aria-labelledby="care-banner-title">
+        <div className="banner-copy">
+          <span className="banner-kicker">
+            <ShieldCheck size={16} />
+            {copy(
+              "A helping hand for healthier farms",
+              "সুস্থ খামারের বিশ্বস্ত সঙ্গী",
+            )}
+          </span>
+          <h2 id="care-banner-title">
+            {copy("Little signs.", "ছোট্ট লক্ষণ।")}
+            <br />
+            {copy("Better care.", "আরও ভালো যত্ন।")}
+          </h2>
+          <p>
+            {copy(
+              "Understand your fish and poultry’s health with a photo. Find helpful guidance, all in one place.",
+              "একটি ছবি দিয়ে জানুন আপনার মাছ ও পোলট্রির স্বাস্থ্য। প্রয়োজনীয় পরামর্শ পান এক জায়গায়।",
+            )}
+          </p>
+          <a href="#farm-care" className="primary-action">
+            {copy("Let’s check their health", "স্বাস্থ্য পরীক্ষা শুরু করুন")}
+            <ArrowRight size={18} />
+          </a>
         </div>
-        <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center pt-20">
-          <div className="max-w-3xl animate-fade-in">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">{t('home.hero.title')}</h1>
-            <p className="text-xl md:text-2xl text-white/90 mb-4">{t('home.hero.subtitle')}</p>
-            <p className="text-lg text-white/80 mb-8 max-w-2xl">
-              {t('home.hero.desc')}
-            </p>
+        <div className="banner-art" aria-hidden="true">
+          <div className="art-orbit" />
+          <div className="photo-tile photo-fish">
+            <img src={fishImage} alt="" />
+            <span>
+              <Fish size={18} />
+              {copy("Fish care", "মাছের যত্ন")}
+              <Check size={16} />
+            </span>
+          </div>
+          <div className="photo-tile photo-poultry">
+            <img src={poultryImage} alt="" />
+            <span>
+              <Bird size={18} />
+              {copy("Poultry care", "পোলট্রির যত্ন")}
+              <Check size={16} />
+            </span>
+          </div>
+          <span className="art-heart">
+            <Heart size={27} fill="currentColor" />
+          </span>
+        </div>
+      </section>
+
+      <div className="home-search">
+        <Search size={23} />
+        <input
+          type="search"
+          aria-label={copy("Find a care service", "সেবা খুঁজুন")}
+          placeholder={copy(
+            "Find fish care, poultry care, or a disease guide…",
+            "মাছ, পোলট্রির যত্ন বা রোগের তথ্য খুঁজুন…",
+          )}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <span className="search-hint">
+          {copy("Explore care", "সেবা খুঁজুন")}
+        </span>
+      </div>
+      <section className="services-section" aria-labelledby="services-heading">
+        <div className="section-heading">
+          <h2 id="services-heading">
+            {copy("How can we help today?", "আজ কীভাবে সাহায্য করতে পারি?")}
+          </h2>
+          <span>
+            {copy("A little support, every day", "প্রতিদিন, আপনার পাশে")}
+          </span>
+        </div>
+        <div className="service-grid">
+          {filteredServices.map((service) => (
             <button
-              onClick={openLogin}
-              className="inline-block bg-transparent border-2 border-white text-white px-10 py-4 rounded-lg hover:bg-white hover:text-green-700 transition-all text-lg font-semibold shadow-lg hover:shadow-xl"
+              key={service.title}
+              className={`service-tile ${service.color}`}
+              onClick={service.action}
             >
-              {t('home.getStarted')}
+              <span className="service-icon">
+                <service.icon size={31} strokeWidth={1.9} />
+              </span>
+              <strong>{service.title}</strong>
+              <span className="service-description">{service.description}</span>
+              <ArrowRight className="tile-arrow" size={19} />
+            </button>
+          ))}
+        </div>
+        {filteredServices.length === 0 && (
+          <div className="search-empty" role="status">
+            {copy(
+              "No matching services. Try “fish”, “poultry”, or “disease”.",
+              "কোনো সেবা পাওয়া যায়নি। “মাছ”, “পোলট্রি” বা “রোগ” লিখে খুঁজুন।",
+            )}
+            <button onClick={() => setQuery("")}>
+              {copy("Show all services", "সব সেবা দেখুন")}
             </button>
           </div>
-        </div>
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="text-white text-sm">{t('home.scroll')}</div>
-          <div className="w-6 h-10 border-2 border-white rounded-full mx-auto mt-2 flex items-start justify-center p-2">
-            <div className="w-1 h-3 bg-white rounded-full animate-scroll"></div>
-          </div>
-        </div>
-      </div>
+        )}
+      </section>
 
-      {/* Section 1: Find Disease */}
-      <div ref={(el) => (sectionsRef.current[0] = el)} className="relative h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${fishImage})`, filter: 'brightness(0.4)' }} />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className={`max-w-2xl transition-all duration-1000 ${activeSection >= 0 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl">
-                <Search className="w-16 h-16 text-white" />
-              </div>
-            </div>
-            <h2 className="text-5xl font-bold text-white mb-6">{t('home.find.title')}</h2>
-            <p className="text-xl text-white/90 mb-6">
-              {t('home.find.desc')}
+      <section
+        id="farm-care"
+        className="farm-care-section"
+        aria-labelledby="farm-care-heading"
+      >
+        <div className="section-heading">
+          <div>
+            <h2 id="farm-care-heading">
+              {copy("Care for your farm", "আপনার খামারের যত্নে")}
+            </h2>
+            <p>
+              {copy(
+                "Choose who needs a little attention today.",
+                "আজ কার যত্ন দরকার, বেছে নিন।",
+              )}
             </p>
-            <div className="flex gap-4">
-              <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
-                <Fish className="w-8 h-8 text-blue-300" />
-                <span className="text-white font-medium">{t('common.fishDiseases')}</span>
-              </div>
-              <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
-                <Bird className="w-8 h-8 text-green-300" />
-                <span className="text-white font-medium">Poultry Diseases</span>
-              </div>
-            </div>
           </div>
+          <Link to="/disease-database">
+            {copy("Explore the guide", "রোগের তথ্য দেখুন")}
+            <ArrowRight size={17} />
+          </Link>
         </div>
-      </div>
-
-      {/* Section 2: Treat Your Livestock */}
-      <div ref={(el) => (sectionsRef.current[1] = el)} className="relative h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${poultryImage})`, filter: 'brightness(0.4)' }} />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className={`max-w-2xl ml-auto transition-all duration-1000 ${activeSection >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl">
-                <Pill className="w-16 h-16 text-white" />
-              </div>
-            </div>
-            <h2 className="text-5xl font-bold text-white mb-6">{t('home.treat.title')}</h2>
-            <p className="text-xl text-white/90 mb-6">
-              {t('home.treat.desc')}
-            </p>
-            <div className="flex gap-4">
-              <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
-                <Stethoscope className="w-8 h-8 text-red-300" />
-                <span className="text-white font-medium">{t('home.treat.badge')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 3: Learn More */}
-      <div ref={(el) => (sectionsRef.current[2] = el)} className="relative h-screen flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 to-blue-900" />
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay" style={{ backgroundImage: `url(${fishImage})` }} />
-        </div>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className={`max-w-2xl transition-all duration-1000 ${activeSection >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl">
-                <BookOpen className="w-16 h-16 text-white" />
-              </div>
-            </div>
-            <h2 className="text-5xl font-bold text-white mb-6">{t('home.learn.title')}</h2>
-            <p className="text-xl text-white/90 mb-6">
-              {t('home.learn.desc')}
-            </p>
-            <div className="flex gap-4">
-              <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-lg flex items-center gap-3">
-                <Microscope className="w-8 h-8 text-purple-300" />
-                <span className="text-white font-medium">{t('home.learn.badge')}</span>
-              </div>
-            </div>
-            <Link
-              to="/disease-database"
-              className="inline-block mt-6 bg-white text-purple-900 px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors font-semibold text-lg"
+        <div className="animal-grid">
+          {[
+            {
+              type: "fish",
+              image: fishImage,
+              icon: Fish,
+              title: copy(
+                "Healthy waters. Happy fish.",
+                "সুস্থ পানিতে, সুস্থ মাছ।",
+              ),
+              tag: copy("FISH HEALTH", "মাছের স্বাস্থ্য"),
+              desc: copy(
+                "Spot visible signs and learn what your fish may need.",
+                "মাছের লক্ষণ দেখে প্রয়োজনীয় যত্ন সম্পর্কে জানুন।",
+              ),
+              color: "aqua",
+            },
+            {
+              type: "poultry",
+              image: poultryImage,
+              icon: Bird,
+              title: copy(
+                "A little care for every bird.",
+                "প্রতিটি পাখির জন্য একটু যত্ন।",
+              ),
+              tag: copy("POULTRY HEALTH", "পোলট্রির স্বাস্থ্য"),
+              desc: copy(
+                "Upload a dropping photo for a poultry health check.",
+                "পোলট্রির স্বাস্থ্য পরীক্ষার জন্য বিষ্ঠার ছবি দিন।",
+              ),
+              color: "cream",
+            },
+          ].map((animal) => (
+            <button
+              key={animal.type}
+              className="animal-card"
+              onClick={() => start(animal.type)}
             >
-              {t('home.learn.browse')}
-            </Link>
-          </div>
+              <div className="animal-photo">
+                <img
+                  src={animal.image}
+                  alt={
+                    animal.type === "fish"
+                      ? copy(
+                          "Fish swimming underwater",
+                          "পানিতে সাঁতার কাটা মাছ",
+                        )
+                      : copy("Young poultry chicks", "পোলট্রির বাচ্চা")
+                  }
+                />
+                <span className={`animal-badge ${animal.color}`}>
+                  <animal.icon size={17} />
+                  {animal.tag}
+                </span>
+              </div>
+              <div className="animal-copy">
+                <h3>{animal.title}</h3>
+                <p>{animal.desc}</p>
+                <span className="animal-link">
+                  {copy("Start a health check", "স্বাস্থ্য পরীক্ষা করুন")}
+                  <ArrowRight size={19} />
+                </span>
+              </div>
+            </button>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-50 py-8 border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600">
-          <p className="text-lg">{t('home.footer')}</p>
+      <section className="steps-section" aria-labelledby="steps-heading">
+        <div className="section-heading">
+          <h2 id="steps-heading">
+            {copy("Simple steps. Thoughtful care.", "সহজ ধাপে, যত্নের পথে।")}
+          </h2>
         </div>
-      </footer>
-
-      {showLoginModal && (
-        <LoginModal onClose={closeModal} startOnRegister={showRegister} />
-      )}
-
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes scroll {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(12px); }
-        }
-        .animate-fade-in { animation: fade-in 1s ease-out; }
-        .animate-scroll { animation: scroll 1.5s ease-in-out infinite; }
-      `}</style>
-    </div>
+        <div className="steps-grid">
+          {[
+            {
+              icon: Camera,
+              title: copy("Take a clear photo", "পরিষ্কার ছবি তুলুন"),
+              text: copy(
+                "Choose fish or poultry and upload an image.",
+                "মাছ বা পোলট্রি বেছে নিয়ে ছবি আপলোড করুন।",
+              ),
+            },
+            {
+              icon: BookOpen,
+              title: copy("Understand the signs", "লক্ষণগুলো বুঝুন"),
+              text: copy(
+                "Review the health insights from your image.",
+                "ছবির ভিত্তিতে পাওয়া ফলাফল দেখুন।",
+              ),
+            },
+            {
+              icon: Heart,
+              title: copy("Plan the next step", "পরবর্তী পদক্ষেপ নিন"),
+              text: copy(
+                "Read care guidance and consult your veterinarian.",
+                "যত্নের পরামর্শ পড়ুন এবং পশুচিকিৎসকের সঙ্গে কথা বলুন।",
+              ),
+            },
+          ].map((step, index) => (
+            <div className="step-card" key={step.title}>
+              <span className="step-icon">
+                <step.icon size={24} />
+              </span>
+              <div>
+                <small>{copy(`STEP 0${index + 1}`, `ধাপ ০${index + 1}`)}</small>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+    </main>
   );
 }

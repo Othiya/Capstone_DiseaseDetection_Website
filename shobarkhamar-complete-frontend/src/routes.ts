@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, redirect } from "react-router";
 import { Home } from "./components/Home";
 import { Selection } from "./components/Selection";
 import { Detection } from "./components/Detection";
@@ -12,53 +12,69 @@ import { Notifications } from "./components/Notifications";
 import { DiseaseDatabase } from "./components/DiseaseDatabase";
 import { Feedback } from "./components/Feedback";
 
+import { clearSession } from "./services/session";
+
+import { SiteLayout } from "./components/SiteLayout";
+
 export const router = createBrowserRouter([
   {
-    path: "/",
-    Component: Home,
+    path: "/logout",
+    loader: () => {
+      clearSession();
+      return redirect("/");
+    },
   },
   {
-    path: "/selection",
-    Component: Selection,
-  },
-  {
-    path: "/profile",
-    Component: Profile,
-  },
-  {
-    path: "/farm-info",
-    Component: FarmInfo,
-  },
-  {
-    path: "/detection",
-    Component: Detection,
-  },
-  {
-    path: "/treatment",
-    Component: Treatment,
-  },
-  {
-    path: "/history",
-    Component: History,
-  },
-  {
-    path: "/notifications",
-    Component: Notifications,
-  },
-  {
-    path: "/disease-database",
-    Component: DiseaseDatabase,
-  },
-  {
-    path: "/feedback",
-    Component: Feedback,
-  },
-  {
-    path: "/results",
-    Component: Results,
-  },
-  {
-    path: "/about",
-    Component: About,
+    Component: SiteLayout,
+    children: [
+      {
+        path: "/",
+        Component: Home,
+      },
+      {
+        path: "/selection",
+        Component: Selection,
+      },
+      {
+        path: "/profile",
+        Component: Profile,
+      },
+      {
+        path: "/farm-info",
+        Component: FarmInfo,
+      },
+      {
+        path: "/detection",
+        Component: Detection,
+      },
+      {
+        path: "/treatment",
+        Component: Treatment,
+      },
+      {
+        path: "/history",
+        Component: History,
+      },
+      {
+        path: "/notifications",
+        Component: Notifications,
+      },
+      {
+        path: "/disease-database",
+        Component: DiseaseDatabase,
+      },
+      {
+        path: "/feedback",
+        Component: Feedback,
+      },
+      {
+        path: "/results",
+        Component: Results,
+      },
+      {
+        path: "/about",
+        Component: About,
+      },
+    ],
   },
 ]);

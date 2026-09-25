@@ -13,7 +13,6 @@ import {
   READ_STORAGE_KEY, isClearedNotification, setClearedAt, storeIds,
 } from '../utils/notifications';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 import { fishDiseaseName } from '../i18n/fish';
 
 type Translate = ReturnType<typeof useLanguage>['t'];
@@ -258,12 +257,6 @@ export function Notifications() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">{t('sel.notifications')}</h1>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-              <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
-            </button>
-            <LanguageToggle />
           </div>
         </div>
       </header>

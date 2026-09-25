@@ -1,4 +1,5 @@
 import { useLocation, Link } from 'react-router';
+import { useLanguage } from '../i18n/LanguageContext';
 import { ArrowLeft, AlertCircle, CheckCircle, Pill } from 'lucide-react';
 
 interface DetectionResult {
@@ -14,11 +15,21 @@ interface DetectionResult {
 
 export function Results() {
   const location = useLocation();
-  const { result, image, type } = location.state as {
+  const { lang } = useLanguage();
+  const { result, image, type } = (location.state || {}) as {
     result: DetectionResult;
     image: string;
     type: string;
   };
+
+  if (!result) return (
+    <main className="empty-results">
+      <span className="empty-results-icon"><Pill size={32} /></span>
+      <h1>{lang === 'bn' ? 'এখনও কোনো ফলাফল নেই' : 'Your next step to better care'}</h1>
+      <p>{lang === 'bn' ? 'ফলাফল দেখতে প্রথমে একটি স্বাস্থ্য পরীক্ষা করুন।' : 'Start a health check to see your results and care guidance here.'}</p>
+      <Link to="/selection" className="primary-action">{lang === 'bn' ? 'স্বাস্থ্য পরীক্ষা শুরু করুন' : 'Start a health check'}</Link>
+    </main>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-blue-50">
@@ -46,7 +57,7 @@ export function Results() {
 
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Analysis Summary</h3>
-            
+
             {result.isHealthy ? (
               <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
                 <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />

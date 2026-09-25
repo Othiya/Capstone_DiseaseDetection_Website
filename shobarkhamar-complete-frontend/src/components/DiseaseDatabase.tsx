@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, LogIn, LogOut, Search, Fish, Bird, AlertCircle, Info, FileText, ShieldCheck, Pill, Sparkles, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 import { FISH_DATABASE_BN } from '../i18n/fish';
 import { getToken } from '../services/api';
 import { LoginModal } from './LoginModal';
@@ -339,26 +338,7 @@ export function DiseaseDatabase() {
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">{t('db.title')}</h1>
             </div>
-            <div className="flex items-center gap-4">
-              {isLoggedIn ? (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>{t('common.logout')}</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors"
-                >
-                  <LogIn className="w-5 h-5" />
-                  <span>{t('common.login')}</span>
-                </button>
-              )}
-              <LanguageToggle />
-            </div>
+
           </div>
         </div>
       </header>
@@ -366,7 +346,7 @@ export function DiseaseDatabase() {
       <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('db.search')}</h2>
-          
+
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -378,7 +358,7 @@ export function DiseaseDatabase() {
                 placeholder={t('db.searchPh')}
               />
             </div>
-            
+
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as 'all' | 'fish' | 'poultry')}
@@ -407,14 +387,14 @@ export function DiseaseDatabase() {
                       <Bird className="w-6 h-6 text-green-600" />
                     )}
                   </div>
-                  
+
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{disease.name}</h3>
                     <p className="text-sm text-gray-600 mb-3">{disease.fullName}</p>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-3 py-1 rounded-full ${
-                        disease.type === 'fish' 
-                          ? 'bg-blue-100 text-blue-800' 
+                        disease.type === 'fish'
+                          ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
                         {disease.type === 'fish' ? t('common.fishDisease') : 'Poultry Disease'}

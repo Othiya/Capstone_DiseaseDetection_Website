@@ -7,7 +7,6 @@ import poultryIcon from 'figma:asset/36269bc95e30a658e2dbcacea10d1ccc3ac7bec8.pn
 import { quickAnalyzeImage, DiagnosisResponse, TargetSpecies } from '../services/api';
 import { notificationService } from '../services/notifications';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 import { fishDiseaseName } from '../i18n/fish';
 
 export function Detection() {
@@ -169,13 +168,6 @@ export function Detection() {
                 {type === 'fish' ? t('det.titleFish') : 'Poultry Disease Detection'}
               </h1>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-              <LogOut className="w-5 h-5" />
-              <span>{t('common.logout')}</span>
-            </button>
-            <LanguageToggle />
           </div>
         </div>
       </header>

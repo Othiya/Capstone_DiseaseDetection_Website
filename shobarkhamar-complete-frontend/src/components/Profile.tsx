@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, LogOut, User, Phone, Mail, MapPin, Save, Edit2, Loader2 } from 'lucide-react';
 import { getToken } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 import type { StringKey } from '../i18n/strings';
 
 const API_BASE = import.meta.env.VITE_API_URL
@@ -110,12 +109,6 @@ export function Profile() {
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">{t('sel.profile')}</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-              <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
-            </button>
-            <LanguageToggle />
           </div>
         </div>
       </header>

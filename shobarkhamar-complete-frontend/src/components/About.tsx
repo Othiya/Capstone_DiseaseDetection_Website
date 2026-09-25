@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import { ArrowLeft, Target, Users, Microscope, Database, FileText, Bell, History } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 import { getToken } from '../services/api';
 
 export function About() {
@@ -18,7 +17,7 @@ export function About() {
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">{t('about.title')}</h1>
             <div className="ml-auto">
-              <LanguageToggle />
+
             </div>
           </div>
         </div>

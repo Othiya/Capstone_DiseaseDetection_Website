@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { ArrowLeft, LogOut, Fish, Bird, Save, Loader2 } from 'lucide-react';
 import { createFarm } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
-import { LanguageToggle } from './LanguageSwitcher';
 
 export function FarmInfo() {
   const navigate = useNavigate();
@@ -69,15 +68,6 @@ export function FarmInfo() {
                   {type === 'fish' ? t('farm.titleFish') : 'Poultry Farm Information'}
                 </h1>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
-              >
-                <LogOut className="w-5 h-5" /><span>{t('common.logout')}</span>
-              </button>
-              <LanguageToggle />
             </div>
           </div>
         </div>
