@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
+from app.core.ai_result import build_ai_result
 from app.models.diagnosis import DiagnosisStatus, TargetSpecies
 from app.schemas.disease import DiseaseResponse
 
@@ -60,6 +61,16 @@ class DiagnosisResponse(BaseModel):
     updated_at: datetime
     images: List[DiagnosisImageResponse] = []
     final_disease: Optional[DiseaseResponse] = None
+
+    @model_validator(mode="after")
+    def _fill_ai_result(self):
+        # Only the code and confidence are persisted, so rebuild the structured
+        # result when reading a past diagnosis back.
+        if self.ai_result is None and self.ai_disease_code and self.ai_confidence is not None:
+            self.ai_result = AIResultResponse(
+                **build_ai_result(self.ai_disease_code, self.ai_confidence)
+            )
+        return self
 
     class Config:
         from_attributes = True

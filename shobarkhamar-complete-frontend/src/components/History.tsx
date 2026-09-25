@@ -1,17 +1,47 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, LogOut, Clock, Fish, Bird, AlertCircle, FileText, Filter, Loader2 } from 'lucide-react';
-import { getHistory, DiagnosisResponse } from '../services/api';
+import { PoultryIcon } from './PoultryIcon';
+import { ArrowLeft, LogOut, Clock, Fish, AlertCircle, FileText, Filter, Loader2 } from 'lucide-react';
+import { getHistory, DiagnosisResponse, getToken } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
-import { fishDiseaseName } from '../i18n/fish';
+import { getDiseaseContent, diseaseDisplayName } from '../services/diseaseContent';
+import type { DiseaseContent } from '../services/diseaseContent';
 
 export function History() {
-  const navigate = useNavigate();
+  // This page can be reached by URL without logging in, so the back link must
+  // go Home rather than into the logged-in dashboard.
+  const isLoggedIn = Boolean(getToken());
+
   const { t, lang, locale, num } = useLanguage();
   const [filter, setFilter] = useState<'all' | 'fish' | 'poultry'>('all');
   const [diagnoses, setDiagnoses] = useState<DiagnosisResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Disease display names for both species come from the backend.
+  const navigate = useNavigate();
+
+  const openRecord = (record: DiagnosisResponse) => {
+    navigate('/treatment', {
+      state: {
+        from: 'history',
+        type: record.target_species?.toLowerCase(),
+        disease: record.ai_result?.disease_name,
+        diagnosisId: record.diagnosis_id,
+      },
+    });
+  };
+
+  const [diseaseNames, setDiseaseNames] = useState<DiseaseContent[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    getDiseaseContent()
+      .then((content) => active && setDiseaseNames(content))
+      .catch(() => active && setDiseaseNames([]));
+    return () => { active = false; };
+  }, []);
+
 
   useEffect(() => {
     getHistory(0, 100)
@@ -20,12 +50,6 @@ export function History() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userName');
-    navigate('/');
-  };
 
   const filtered = filter === 'all'
     ? diagnoses
@@ -40,7 +64,7 @@ export function History() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/selection" className="text-gray-600 hover:text-gray-900">
+              <Link to={isLoggedIn ? '/selection' : '/'} className="text-gray-600 hover:text-gray-900">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">{t('hist.title')}</h1>
@@ -65,7 +89,7 @@ export function History() {
               >
                 <option value="all">{t('hist.all')}</option>
                 <option value="fish">{t('common.fishOnly')}</option>
-                <option value="poultry">Poultry Only</option>
+                <option value="poultry">{t('common.poultryOnly')}</option>
               </select>
             </div>
           </div>
@@ -82,7 +106,7 @@ export function History() {
               <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-xl text-gray-600 mb-2">{t('hist.none')}</p>
               <p className="text-gray-500 mb-6">{t('hist.noneSub')}</p>
-              <Link to="/selection" className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+              <Link to={isLoggedIn ? '/selection' : '/'} className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
                 {t('hist.start')}
               </Link>
             </div>
@@ -95,18 +119,25 @@ export function History() {
                 const isHealthy = disease?.is_healthy ?? true;
 
                 return (
-                  <div key={record.diagnosis_id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div
+                    key={record.diagnosis_id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openRecord(record)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRecord(record); } }}
+                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
                     <div className="flex items-start gap-4">
                       <div className={`p-3 rounded-full ${isFish ? 'bg-blue-100' : 'bg-green-100'}`}>
                         {isFish
                           ? <Fish className="w-6 h-6 text-blue-600" />
-                          : <Bird className="w-6 h-6 text-green-600" />}
+                          : <PoultryIcon size="1.5rem" />}
                       </div>
 
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {isFish ? t('hist.fishDiag') : 'Poultry Diagnosis'}
+                            {isFish ? t('hist.fishDiag') : t('hist.poultryDiag')}
                           </h3>
                           <span className="text-sm text-gray-500">
                             {new Date(record.created_at).toLocaleDateString(locale, {
@@ -127,7 +158,7 @@ export function History() {
                             <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isHealthy ? 'text-green-600' : 'text-red-600'}`} />
                             <div>
                               <p className={`font-semibold ${isHealthy ? 'text-green-600' : 'text-red-600'}`}>
-                                {isHealthy ? t('common.healthy') : isFish ? fishDiseaseName(disease.disease_name, lang) : disease.disease_name}
+                                {isHealthy ? t('common.healthy') : diseaseDisplayName(diseaseNames, disease.disease_name, lang)}
                               </p>
                             </div>
                           </div>

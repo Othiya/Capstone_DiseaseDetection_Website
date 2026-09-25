@@ -9,46 +9,7 @@ from datetime import datetime
 from app.models.diagnosis import Diagnosis, DiagnosisSymptom, DiagnosisImage, DiagnosisStatus
 from app.schemas.diagnosis import DiagnosisCreate, DiagnosisUpdate
 from app.core.config import settings
-
-
-# Disease name mapping from VGG16 class codes
-DISEASE_NAMES = {
-    'avian_influenza': 'Avian Influenza',
-    'cocci':   'Coccidiosis',
-    'healthy': 'Healthy',
-    'ncd':     'Newcastle Disease',
-    'non_poultry': 'Non Poultry',
-    'pullorum': 'Pullorum Disease',
-    'not_fish': 'Not Fish',
-    'salmo':   'Salmonellosis',
-}
-
-NON_DISEASE_CODES = {'healthy', 'non_poultry', 'not_fish'}
-
-
-def _build_ai_result(disease_code: str, confidence: float) -> dict:
-    """Build a structured AI result dict from raw model output."""
-    disease_name = DISEASE_NAMES.get(disease_code, disease_code.upper())
-    is_healthy = disease_code in NON_DISEASE_CODES
-
-    if is_healthy:
-        severity = 'NONE'
-    elif confidence >= 0.8:
-        severity = 'CRITICAL' if disease_code in ('avian_influenza', 'ncd', 'pullorum') else 'HIGH'
-    elif confidence >= 0.6:
-        severity = 'MEDIUM'
-    else:
-        severity = 'LOW'
-
-    return {
-        'disease_code':       disease_code,
-        'disease_name':       disease_name,
-        'confidence':         confidence,
-        'confidence_percent': round(confidence * 100, 2),
-        'severity':           severity,
-        'is_healthy':         is_healthy,
-        'needs_treatment':    not is_healthy and confidence > 0.5,
-    }
+from app.core.ai_result import build_ai_result as _build_ai_result
 
 
 class DiagnosisService:

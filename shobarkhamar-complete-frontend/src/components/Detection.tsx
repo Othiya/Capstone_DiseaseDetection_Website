@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { PoultryIcon } from './PoultryIcon';
 import { Upload, ArrowLeft, Loader2, Fish, LogOut, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router';
 import fishImage from 'figma:asset/62f52d45234fa34e0569cc9cc6fc66e654838740.png';
-import poultryIcon from 'figma:asset/36269bc95e30a658e2dbcacea10d1ccc3ac7bec8.png';
-import { quickAnalyzeImage, DiagnosisResponse, TargetSpecies } from '../services/api';
+import { analyzeImage, quickAnalyzeImage, getFarms, DiagnosisResponse, TargetSpecies, getToken } from '../services/api';
 import { notificationService } from '../services/notifications';
 import { useLanguage } from '../i18n/LanguageContext';
-import { fishDiseaseName } from '../i18n/fish';
+import { getDiseaseContent, diseaseDisplayName } from '../services/diseaseContent';
+import type { DiseaseContent } from '../services/diseaseContent';
 
 export function Detection() {
+  // This page can be reached by URL without logging in, so the back link must
+  // go Home rather than into the logged-in dashboard.
+  const isLoggedIn = Boolean(getToken());
+
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { t, lang } = useLanguage();
@@ -20,6 +25,39 @@ export function Detection() {
   const [symptomsText, setSymptomsText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+
+  // A diagnosis has to belong to a farm for the uploaded image to be stored, which is
+  // what lets the treatment page show it again later (e.g. opened from a notification).
+  const [farmId, setFarmId] = useState<string | null>(null);
+  const [farmsLoaded, setFarmsLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!isLoggedIn) { setFarmsLoaded(true); return; }
+    const wanted = searchParams.get('farm');
+    getFarms()
+      .then((farms) => {
+        if (!active) return;
+        const forSpecies = farms.filter((f) => f.farm_type === (type === 'fish' ? 'FISH' : 'POULTRY'));
+        const chosen = wanted && farms.find((f) => f.farm_id === wanted);
+        setFarmId((chosen || forSpecies[0] || farms[0])?.farm_id ?? null);
+      })
+      .catch(() => active && setFarmId(null))
+      .finally(() => active && setFarmsLoaded(true));
+    return () => { active = false; };
+  }, [isLoggedIn, type, searchParams]);
+
+  // Disease display names for both species come from the backend.
+  const [diseaseNames, setDiseaseNames] = useState<DiseaseContent[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    getDiseaseContent()
+      .then((content) => active && setDiseaseNames(content))
+      .catch(() => active && setDiseaseNames([]));
+    return () => { active = false; };
+  }, []);
+
   const [apiError, setApiError] = useState<string | null>(null);
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -28,12 +66,6 @@ export function Detection() {
 
   const [result, setResult] = useState<Partial<DiagnosisResponse> | null>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userName');
-    navigate('/');
-  };
 
   const setFile = (file: File) => {
     setSelectedFile(file);
@@ -65,7 +97,11 @@ export function Detection() {
     setApiError(null);
 
     try {
-      const diagnosis = await quickAnalyzeImage(selectedFile, type);
+      // With a farm we store the diagnosis and its image server-side; without one we can
+      // still predict, but the image only lives in this page's state.
+      const diagnosis = farmId
+        ? await analyzeImage(selectedFile, type, farmId, symptomsText)
+        : await quickAnalyzeImage(selectedFile, type);
       setResult(diagnosis);
       // Create notification
       const ai = diagnosis.ai_result;
@@ -155,17 +191,17 @@ export function Detection() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/selection" className="text-gray-600 hover:text-gray-900">
+            <Link to={isLoggedIn ? '/selection' : '/'} className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <div className="flex items-center gap-2">
               {type === 'fish' ? (
                 <Fish className="w-6 h-6 text-blue-600" />
               ) : (
-                <img src={poultryIcon} alt="Poultry" className="w-8 h-8" />
+                <PoultryIcon size="2rem" />
               )}
               <h1 className="text-2xl font-bold text-gray-900">
-                {type === 'fish' ? t('det.titleFish') : 'Poultry Disease Detection'}
+                {type === 'fish' ? t('det.titleFish') : t('det.titlePoultry')}
               </h1>
             </div>
           </div>
@@ -173,6 +209,18 @@ export function Detection() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        {isLoggedIn && farmsLoaded && !farmId && (
+          <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-5">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-amber-900">{t('det.noFarm')}</p>
+              <Link to={`/farm-info?type=${type}`} className="inline-block mt-2 font-semibold text-amber-900 underline underline-offset-2">
+                {t('det.registerFarm')}
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
           {type === 'fish' && (
             <div className="rounded-lg overflow-hidden">
@@ -181,7 +229,7 @@ export function Detection() {
           )}
 
           <h2 className="text-2xl font-bold text-gray-900">
-            {type === 'fish' ? t('det.uploadFish') : 'Upload Faeces Image'}
+            {type === 'fish' ? t('det.uploadFish') : t('det.uploadPoultry')}
           </h2>
 
           <div>
@@ -227,7 +275,7 @@ export function Detection() {
               <div className="flex gap-4">
                 <button
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || !farmsLoaded}
                   className="flex-1 bg-green-600 text-white px-6 py-4 rounded-lg hover:bg-green-700 transition-colors text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isAnalyzing ? <><Loader2 className="w-6 h-6 animate-spin" />{t('det.analyzing')}</> : t('det.analyze')}
@@ -244,7 +292,7 @@ export function Detection() {
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• {t('det.tip1')}</li>
               <li>• {t('det.tip2')}</li>
-              <li>• {type === 'fish' ? t('det.tip3Fish') : 'Capture the faeces sample from multiple angles'}</li>
+              <li>• {type === 'fish' ? t('det.tip3Fish') : t('det.tip3Poultry')}</li>
               <li>• {t('det.tip4')}</li>
             </ul>
           </div>
@@ -313,7 +361,7 @@ export function Detection() {
                 )}
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('det.diseaseDetected')}</h3>
                 <p className="text-xl font-bold text-red-600 mb-2 break-words leading-tight px-2">
-                  {type === 'fish' ? fishDiseaseName(disease.disease_name, lang) : disease.disease_name}
+                  {diseaseDisplayName(diseaseNames, disease.disease_name, lang)}
                 </p>
                 <p className="text-sm text-gray-600">{t('det.diseaseDesc')}</p>
                 <button onClick={handleDiseaseOk} className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold mt-6">

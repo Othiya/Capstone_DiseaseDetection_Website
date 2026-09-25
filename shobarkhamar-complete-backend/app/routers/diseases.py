@@ -3,13 +3,39 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from app.core.database import get_db
 from app.core.security import get_current_user, require_admin
+from app.models.disease import TargetSpecies
 from app.schemas.disease import (
     DiseaseCreate, DiseaseUpdate, DiseaseResponse, DiseaseListResponse,
     SymptomCreate, SymptomUpdate, SymptomResponse
 )
+from app.schemas.disease_content import (
+    DiseaseContent, DiseaseContentListResponse, build_disease_content
+)
 from app.services.disease_service import DiseaseService, SymptomService
 
 router = APIRouter(prefix="/diseases", tags=["Disease Database"])
+
+
+# Declared before /{disease_id} so the literal path wins the match.
+@router.get("/content", response_model=DiseaseContentListResponse)
+async def get_disease_content(
+    species: TargetSpecies | None = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """Public bilingual disease reference content for the disease database page."""
+    diseases = await DiseaseService.get_content(db, species)
+    content = [build_disease_content(disease) for disease in diseases]
+    return DiseaseContentListResponse(diseases=content, total=len(content))
+
+
+@router.get("/content/{code}", response_model=DiseaseContent)
+async def get_disease_content_by_code(
+    code: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Content for one disease, looked up by AI class code or display name."""
+    disease = await DiseaseService.get_by_code(db, code)
+    return build_disease_content(disease)
 
 
 @router.get("", response_model=DiseaseListResponse)

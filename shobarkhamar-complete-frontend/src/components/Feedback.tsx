@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
+import { getToken } from '../services/api';
 import { ArrowLeft, LogOut, Star, Send, CheckCircle, MessageSquareQuote } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -13,7 +14,10 @@ interface StoredFeedback {
 const FEEDBACK_STORAGE_KEY = 'userFeedback';
 
 export function Feedback() {
-  const navigate = useNavigate();
+  // This page can be reached by URL without logging in, so the back link must
+  // go Home rather than into the logged-in dashboard.
+  const isLoggedIn = Boolean(getToken());
+
   const { t, lang, locale } = useLanguage();
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -30,11 +34,6 @@ export function Feedback() {
     }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userName');
-    navigate('/');
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +65,7 @@ export function Feedback() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/selection" className="text-gray-600 hover:text-gray-900">
+              <Link to={isLoggedIn ? '/selection' : '/'} className="text-gray-600 hover:text-gray-900">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">{t('fb.title')}</h1>
@@ -150,7 +149,7 @@ export function Feedback() {
                   {t('fb.submit')}
                 </button>
                 <Link
-                  to="/selection"
+                  to={isLoggedIn ? '/selection' : '/'}
                   className="flex-1 bg-gray-200 text-gray-800 px-6 py-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold text-center"
                 >
                   {t('common.cancel')}

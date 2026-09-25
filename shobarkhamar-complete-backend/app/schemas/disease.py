@@ -30,6 +30,7 @@ class SymptomResponse(SymptomBase):
 
 # Disease Schemas
 class DiseaseBase(BaseModel):
+    disease_code: str = Field(..., min_length=1, max_length=60)
     disease_name: str = Field(..., min_length=1, max_length=200)
     target_species: TargetSpecies
     description: Optional[str] = None
@@ -42,6 +43,7 @@ class DiseaseCreate(DiseaseBase):
 
 
 class DiseaseUpdate(BaseModel):
+    disease_code: Optional[str] = Field(None, min_length=1, max_length=60)
     disease_name: Optional[str] = Field(None, min_length=1, max_length=200)
     target_species: Optional[TargetSpecies] = None
     description: Optional[str] = None

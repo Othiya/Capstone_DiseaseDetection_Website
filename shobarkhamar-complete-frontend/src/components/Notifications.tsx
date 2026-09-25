@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { PoultryIcon } from './PoultryIcon';
 import {
-  ArrowLeft, LogOut, Bell, Fish, Bird,
-  AlertTriangle, CheckCircle2, Info, Loader2,
+  ArrowLeft, LogOut, Bell, Fish, AlertTriangle, CheckCircle2, Info, Loader2,
   Clock, Microscope, Activity, X, Trash2,
 } from 'lucide-react';
 import { getHistory, getToken } from '../services/api';
@@ -13,7 +13,9 @@ import {
   READ_STORAGE_KEY, isClearedNotification, setClearedAt, storeIds,
 } from '../utils/notifications';
 import { useLanguage } from '../i18n/LanguageContext';
-import { fishDiseaseName } from '../i18n/fish';
+import type { StringKey } from '../i18n/strings';
+import { getDiseaseContent, diseaseDisplayName } from '../services/diseaseContent';
+import type { DiseaseContent } from '../services/diseaseContent';
 
 type Translate = ReturnType<typeof useLanguage>['t'];
 
@@ -102,7 +104,7 @@ const SYSTEM_NOTIFICATIONS: Notification[] = [
 function KindIcon({ kind, species }: { kind: NotifKind; species?: string }) {
   if (kind === 'disease') return <AlertTriangle className="w-5 h-5 text-red-500" />;
   if (kind === 'healthy') return species === 'poultry'
-    ? <Bird className="w-5 h-5 text-green-500" />
+    ? <PoultryIcon size="1.25rem" />
     : <Fish className="w-5 h-5 text-green-500" />;
   if (kind === 'system') return <Activity className="w-5 h-5 text-violet-500" />;
   return <Info className="w-5 h-5 text-blue-500" />;
@@ -130,6 +132,10 @@ function timeAgo(date: Date, t: Translate, locale: string | undefined): string {
 }
 
 export function Notifications() {
+  // This page can be reached by URL without logging in, so the back link must
+  // go Home rather than into the logged-in dashboard.
+  const isLoggedIn = Boolean(getToken());
+
   const navigate = useNavigate();
   const { t, lang, locale, num } = useLanguage();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -137,6 +143,17 @@ export function Notifications() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Disease names for both species come from the backend so notifications can be
+  // shown in Bangla without a second copy of the name list in the frontend.
+  const [diseases, setDiseases] = useState<DiseaseContent[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    getDiseaseContent()
+      .then((content) => active && setDiseases(content))
+      .catch(() => active && setDiseases([]));
+    return () => { active = false; };
+  }, []);
 
   const loadNotifications = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
@@ -183,12 +200,6 @@ export function Notifications() {
 
   useEffect(() => { loadNotifications(); }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userName');
-    navigate('/');
-  };
 
   const markAsRead = (id: string) => {
     storeIds(READ_STORAGE_KEY, [...getStoredIds(READ_STORAGE_KEY), id]);
@@ -218,24 +229,34 @@ export function Notifications() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Fish and system notifications are shown in the chosen language; poultry ones stay in English.
+  // Fish, poultry and system notifications are all shown in the chosen language.
   const localize = (n: Notification): { title: string; message: string } => {
     if (lang === 'en') return { title: n.title, message: n.message };
     if (n.id === 'sys-1') return { title: t('notif.sys1Title'), message: t('notif.sys1Msg') };
     if (n.id === 'info-1') return { title: t('notif.info1Title'), message: t('notif.info1Msg') };
-    if (n.species !== 'fish') return { title: n.title, message: n.message };
+    if (n.species !== 'fish' && n.species !== 'poultry') return { title: n.title, message: n.message };
+
+    const prefix = n.species === 'poultry' ? 'poultry' : 'fish';
     const isLocal = n.id.startsWith('notif_');
-    const name = fishDiseaseName(n.diseaseName, lang);
+    const name = diseaseDisplayName(diseases, n.diseaseName, lang);
     if (n.kind === 'disease') {
       return {
-        title: t('notif.fishDiseaseTitle', { name }),
-        message: isLocal ? t('notif.fishDiseaseLocalMsg') : t('notif.fishDiseaseMsg', { name }),
+        title: t(`notif.${prefix}DiseaseTitle` as StringKey, { name }),
+        message: isLocal
+          ? t(`notif.${prefix}DiseaseLocalMsg` as StringKey)
+          : t(`notif.${prefix}DiseaseMsg` as StringKey, { name }),
       };
     }
     if (n.kind === 'healthy') {
       return isLocal
-        ? { title: t('notif.fishHealthyLocalTitle'), message: t('notif.fishHealthyLocalMsg') }
-        : { title: t('notif.fishHealthyTitle'), message: t('notif.fishHealthyMsg', { date: n.timestamp.toLocaleDateString(locale) }) };
+        ? {
+            title: t(`notif.${prefix}HealthyLocalTitle` as StringKey),
+            message: t(`notif.${prefix}HealthyLocalMsg` as StringKey),
+          }
+        : {
+            title: t(`notif.${prefix}HealthyTitle` as StringKey),
+            message: t(`notif.${prefix}HealthyMsg` as StringKey, { date: n.timestamp.toLocaleDateString(locale) }),
+          };
     }
     return { title: n.title, message: n.message };
   };
@@ -245,7 +266,7 @@ export function Notifications() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/selection" className="text-gray-600 hover:text-gray-900"><ArrowLeft className="w-6 h-6" /></Link>
+            <Link to={isLoggedIn ? '/selection' : '/'} className="text-gray-600 hover:text-gray-900"><ArrowLeft className="w-6 h-6" /></Link>
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Bell className="w-6 h-6 text-gray-900" />

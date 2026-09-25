@@ -233,17 +233,13 @@ export function About() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-green-900 mb-3">Poultry Diseases</h4>
+              <h4 className="font-semibold text-green-900 mb-3">{t('common.poultryDiseases')}</h4>
               <ul className="space-y-2 text-gray-700">
-                <li>• Avian Influenza</li>
-                <li>• NVD (Newcastle Disease)</li>
-                <li>• Pullorum Disease</li>
-                <li>• Coccidiosis</li>
-                <li>• Salmonellosis</li>
-                <li>• Avian influenza</li>
-                <li>• Bacterial infections</li>
-                <li>• Nutritional deficiencies</li>
-                <li>...and more in our database</li>
+                <li>{t('about.poultry1')}</li>
+                <li>{t('about.poultry2')}</li>
+                <li>{t('about.poultry3')}</li>
+                <li>{t('about.poultry4')}</li>
+                <li>{t('about.poultry5')}</li>
               </ul>
             </div>
           </div>

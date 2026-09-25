@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { PoultryIcon } from './PoultryIcon';
 import { Link, useNavigate } from "react-router";
 import {
   ArrowRight,
-  Bird,
   BookOpen,
   Camera,
   Check,
@@ -45,7 +45,7 @@ export function Home({ dashboard = false }: { dashboard?: boolean }) {
         "A healthier flock starts here",
         "সুস্থ থাকুক আপনার পোলট্রি",
       ),
-      icon: Bird,
+      icon: PoultryIcon,
       color: "cream",
       action: () => start("poultry"),
     },
@@ -162,7 +162,7 @@ export function Home({ dashboard = false }: { dashboard?: boolean }) {
           <div className="photo-tile photo-poultry">
             <img src={poultryImage} alt="" />
             <span>
-              <Bird size={18} />
+              <PoultryIcon size="1.125rem" />
               {copy("Poultry care", "পোলট্রির যত্ন")}
               <Check size={16} />
             </span>
@@ -269,7 +269,7 @@ export function Home({ dashboard = false }: { dashboard?: boolean }) {
             {
               type: "poultry",
               image: poultryImage,
-              icon: Bird,
+              icon: PoultryIcon,
               title: copy(
                 "A little care for every bird.",
                 "প্রতিটি পাখির জন্য একটু যত্ন।",

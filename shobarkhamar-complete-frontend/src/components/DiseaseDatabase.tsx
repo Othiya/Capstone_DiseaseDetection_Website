@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { ArrowLeft, LogIn, LogOut, Search, Fish, Bird, AlertCircle, Info, FileText, ShieldCheck, Pill, Sparkles, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { PoultryIcon } from './PoultryIcon';
+import { ArrowLeft, Search, Fish, AlertCircle, Info, FileText, ShieldCheck, Pill, Sparkles, X, Siren, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { FISH_DATABASE_BN } from '../i18n/fish';
+import type { Lang } from '../i18n/LanguageContext';
 import { getToken } from '../services/api';
-import { LoginModal } from './LoginModal';
+import { getDiseaseContent, pick, pickList } from '../services/diseaseContent';
+import type { DiseaseContent } from '../services/diseaseContent';
 
 interface Disease {
   id: string;
@@ -17,310 +19,63 @@ interface Disease {
   medication: string;
   precautions: string[];
   effectiveness: string;
+  notifiable: boolean;
+  zoonotic: boolean;
+  requiresVeterinarian: boolean;
+  reference: string | null;
+}
+
+function toDisease(entry: DiseaseContent, lang: Lang): Disease {
+  const treatment = entry.treatment;
+  return {
+    id: entry.disease_code,
+    name: pick(entry.short_name, lang),
+    fullName: pick(entry.name, lang),
+    type: entry.species === 'POULTRY' ? 'poultry' : 'fish',
+    symptoms: pickList(entry.symptoms, lang),
+    diagnosis: pick(entry.diagnosis, lang),
+    treatment: pick(treatment?.summary, lang),
+    medication: pick(treatment?.medication_summary, lang),
+    precautions: pickList(treatment?.precautions, lang),
+    effectiveness: pick(treatment?.effectiveness, lang),
+    notifiable: entry.notifiable,
+    zoonotic: entry.zoonotic,
+    requiresVeterinarian: treatment?.requires_veterinarian ?? false,
+    reference: treatment?.reference ?? null,
+  };
 }
 
 export function DiseaseDatabase() {
-  const navigate = useNavigate();
   const { t, lang } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'fish' | 'poultry'>('all');
   const [selectedDisease, setSelectedDisease] = useState<Disease | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // This page is public: visitors who are not logged in get a Login button and go back to Home.
+  // This page is public: visitors who are not logged in go back to Home, not the dashboard.
   const isLoggedIn = Boolean(getToken());
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userName');
-    navigate('/');
-  };
+  const [diseaseDatabase, setDiseaseDatabase] = useState<Disease[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Mock disease database - reflects the Disease table structure from ERD
-  const diseaseDatabase: Disease[] = [
-    {
-      id: 'F1',
-      name: 'Bacterial Red Disease',
-      fullName: 'Bacterial Red Disease (Hemorrhagic Septicemia)',
-      type: 'fish',
-      symptoms: [
-        '2–5 small reddish spots/patches limited to specific areas of the body (each less than 1 cm across)',
-        'Reddish marks at the base of the fins (fin edges still intact)',
-        'Little change in behaviour at first, but fish gradually become lethargic'
-      ],
-      diagnosis: 'Visual signs of haemorrhage on skin and fins, confirmed by isolating the bacteria (Aeromonas / Pseudomonas) from kidney or blood in a fisheries laboratory',
-      treatment: 'Oxytetracycline medicated feed, potassium permanganate pond disinfection and improved water quality',
-      medication: 'Oxytetracycline 50–75 mg/kg body weight/day in feed for 7–10 days',
-      precautions: [
-        'Increase aeration immediately',
-        'Stop feeding unmedicated commercial feed',
-        'Remove dead and weak fish every day',
-        'Do not discharge pond water into natural drainage during treatment',
-        'Apply quicklime (1–2 kg/decimal) to improve water quality'
-      ],
-      effectiveness: 'Good when treated early; recovery depends on water quality and prompt medicated feeding'
-    },
-    {
-      id: 'F2',
-      name: 'Aeromoniasis',
-      fullName: 'Bacterial Disease – Aeromoniasis (Motile Aeromonas Septicemia)',
-      type: 'fish',
-      symptoms: [
-        'Widespread bleeding or deep ulcers/sores over the whole body',
-        'Swollen belly',
-        'Swollen eyes',
-        'Sudden deaths without any warning signs',
-        'Scales coming off',
-        'Fin edges turning pale and tearing',
-        'Heavy bleeding on the fins',
-        'Pale gills (as if anaemic)',
-        'Lethargic, swimming slowly at the water surface and losing balance',
-        'Fish stop eating completely'
-      ],
-      diagnosis: 'Clinical signs of ulcers and haemorrhage, confirmed by isolating Aeromonas hydrophila from lesions or internal organs',
-      treatment: 'Oxytetracycline or florfenicol medicated feed, potassium permanganate dip for severe ulcers, and water quality correction',
-      medication: 'Oxytetracycline 50–75 mg/kg body weight/day in feed for 7–10 days',
-      precautions: [
-        'Reduce stocking density',
-        'Exchange 20–30% of the pond water',
-        'Handle fish gently to avoid wounds',
-        'Observe withdrawal periods before harvesting',
-        'Lime the pond with quicklime (1 kg/decimal)'
-      ],
-      effectiveness: 'Good with early medicated feeding and better water quality; stressed ponds may relapse'
-    },
-    {
-      id: 'F3',
-      name: 'Bacterial Gill Disease',
-      fullName: 'Bacterial Gill Disease',
-      type: 'fish',
-      symptoms: [
-        'Swollen gills that are reddish or bleeding',
-        'Sudden, widespread deaths among the fish (across a large part of the pond)',
-        'Gill filaments stuck together',
-        'Gill cover (operculum) staying open',
-        'Fish facing into the water current or crowding at the water surface'
-      ],
-      diagnosis: 'Microscopic gill examination showing bacterial mats on the gill filaments; usually linked to poor water quality and high organic load',
-      treatment: 'Potassium permanganate or salt bath, with oxytetracycline feed if the infection is systemic',
-      medication: 'Potassium permanganate 2.0–2.5 mg/L, or salt (NaCl) 1–2% dip for 10 minutes',
-      precautions: [
-        'Aerate heavily during bath treatments',
-        'Reduce the feeding rate',
-        'Clear bottom sludge to lower the organic load',
-        'Avoid overcrowding',
-        'Test water quality (oxygen, ammonia) regularly'
-      ],
-      effectiveness: 'Good once water quality is corrected; comes back if the organic load stays high'
-    },
-    {
-      id: 'F4',
-      name: 'Saprolegniasis',
-      fullName: 'Fungal Disease – Saprolegniasis (Cotton Wool Disease)',
-      type: 'fish',
-      symptoms: [
-        'White or grey cotton-like coating on the skin',
-        'The coating turning brown or green',
-        'Cotton-like white coating on the fins, with worn fin edges',
-        'Cotton-like white coating on the gills',
-        'In severe cases, floating head-down'
-      ],
-      diagnosis: 'Visible cotton-like growth, confirmed by microscopic examination of a wet mount showing fungal hyphae',
-      treatment: 'Salt bath or potassium permanganate bath, and removing the cause of stress or injury',
-      medication: 'Salt bath: 10–30 g/L (1–3%) NaCl for 5–10 minutes',
-      precautions: [
-        'Handle fish carefully to avoid injuries',
-        'Remove dead fish and eggs quickly',
-        'Keep water clean and avoid sudden temperature drops',
-        'Do not use unbuffered chemicals on fish eggs',
-        'Treat the underlying wounds or parasites'
-      ],
-      effectiveness: 'Good for early skin infections; severe gill infection is often fatal'
-    },
-    {
-      id: 'F5',
-      name: 'Parasitic Diseases',
-      fullName: 'Parasitic Diseases',
-      type: 'fish',
-      symptoms: [
-        'Pinhead-sized white dots on the skin (about 0.5–1 mm)',
-        'More grey mucus (slime) on the body than normal',
-        'Small white dots on the fins',
-        'Heavy parasite load on the gills, fish struggling to breathe',
-        'Rubbing or scratching the body against objects',
-        'Swimming abnormally'
-      ],
-      diagnosis: 'Microscopic examination of skin and gill scrapings to identify the parasite',
-      treatment: 'Formalin or salt bath; praziquantel for flukes',
-      medication: 'Formalin 25 mg/L long-term pond treatment, or salt dip 10–20 g/L NaCl for 10–15 minutes',
-      precautions: [
-        'Keep strong aeration — formalin lowers oxygen in the water',
-        'Quarantine new fish before stocking',
-        'Dry and lime the pond between crops',
-        'Avoid overstocking',
-        'Repeat treatment as advised by a fisheries officer if the parasite has a long life cycle'
-      ],
-      effectiveness: 'High when the parasite is correctly identified and treatment is repeated as needed'
-    },
-    {
-      id: 'F6',
-      name: 'White Tail Disease',
-      fullName: 'Viral Disease – White Tail Disease (Macrobrachium rosenbergii nodavirus)',
-      type: 'fish',
-      symptoms: [
-        'Milky white tail muscle in post-larvae and prawns',
-        'Whiteness spreads from the tail towards the head',
-        'Reduced feeding and weak swimming',
-        'Sudden mass deaths in hatcheries and nurseries',
-        'Mortality can reach 100% in post-larvae'
-      ],
-      diagnosis: 'Clinical signs confirmed by PCR testing for Macrobrachium rosenbergii nodavirus (MrNV)',
-      treatment: 'No cure; supportive care, immunity boosters and strict biosecurity',
-      medication: 'No antiviral treatment — Vitamin C 500–1000 mg/kg feed to support uninfected stock',
-      precautions: [
-        'Quarantine infected ponds immediately',
-        'Disinfect water with chlorine before discharge',
-        'Stock only PCR-screened post-larvae',
-        'Dry and lime pond bottoms before restocking',
-        'Destroy affected stock biosecurely'
-      ],
-      effectiveness: 'Very low once infected — prevention through biosecurity is the only control'
-    },
-    {
-      id: '2',
-      name: 'NVD',
-      fullName: 'Newcastle Disease',
-      type: 'poultry',
-      symptoms: [
-        'Respiratory distress and gasping',
-        'Greenish watery diarrhea',
-        'Twisted neck and paralysis',
-        'Swelling around eyes and neck',
-        'Sudden death in acute cases'
-      ],
-      diagnosis: 'Clinical signs, post-mortem examination, virus isolation, serological tests',
-      treatment: 'Use antibiotics, supportive therapy, vaccination of healthy birds',
-      medication: 'Oxytetracycline 250mg - 50mg per kg body weight',
-      precautions: [
-        'Immediate quarantine of affected birds',
-        'Vaccinate all healthy birds',
-        'Proper disposal of dead birds',
-        'Enhanced biosecurity measures',
-        'Thorough disinfection of premises'
-      ],
-      effectiveness: 'Moderate - 60-70% with treatment, prevention through vaccination is key'
-    },
-    {
-      id: '4',
-      name: 'Coccidiosis',
-      fullName: 'Coccidiosis',
-      type: 'poultry',
-      symptoms: [
-        'Bloody diarrhea',
-        'Ruffled feathers and depression',
-        'Reduced feed consumption',
-        'Dehydration',
-        'Poor growth rate'
-      ],
-      diagnosis: 'Fecal examination for oocysts, post-mortem intestinal lesions',
-      treatment: 'Anticoccidial medication, supportive care',
-      medication: 'Amprolium or Sulfonamides',
-      precautions: [
-        'Maintain dry litter conditions',
-        'Proper ventilation',
-        'Regular cleaning and disinfection',
-        'Avoid overcrowding',
-        'Prophylactic medication in feed'
-      ],
-      effectiveness: 'High - 85% recovery with early treatment'
-    },
-    {
-      id: '5',
-      name: 'Avian Influenza',
-      fullName: 'Avian Influenza',
-      type: 'poultry',
-      symptoms: [
-        'Sudden death or severe weakness',
-        'Respiratory distress',
-        'Swelling or discoloration of the comb and wattles',
-        'Drop in egg production',
-        'Diarrhea and neurological signs'
-      ],
-      diagnosis: 'Urgent veterinary assessment and laboratory confirmation are required',
-      treatment: 'No flock-level curative treatment; follow official outbreak-control instructions',
-      medication: 'Not applicable without veterinary direction',
-      precautions: [
-        'Immediately isolate the flock',
-        'Restrict movement of birds and equipment',
-        'Use personal protective equipment',
-        'Do not handle or sell sick or dead birds',
-        'Notify the local livestock authority'
-      ],
-      effectiveness: 'Control depends on rapid reporting, quarantine, and official response'
-    },
-    {
-      id: '6',
-      name: 'Pullorum',
-      fullName: 'Pullorum Disease',
-      type: 'poultry',
-      symptoms: [
-        'White diarrhea in young chicks',
-        'Pasted vents',
-        'Weakness and huddling',
-        'Poor growth',
-        'High chick mortality'
-      ],
-      diagnosis: 'Veterinary examination with bacterial culture or approved serological testing',
-      treatment: 'Testing, removal of carriers, sanitation, and disease-free breeding stock',
-      medication: 'Only under veterinary and regulatory direction',
-      precautions: [
-        'Separate affected birds',
-        'Stop movement of eggs and birds',
-        'Disinfect incubators and housing',
-        'Test breeding flocks',
-        'Source chicks from certified disease-free stock'
-      ],
-      effectiveness: 'Best controlled through testing and carrier elimination'
-    },
-    {
-      id: '7',
-      name: 'Salmonellosis',
-      fullName: 'Salmonellosis',
-      type: 'poultry',
-      symptoms: [
-        'Diarrhea and dehydration',
-        'Reduced appetite',
-        'Weakness and poor growth',
-        'Reduced egg production',
-        'Increased mortality in young birds'
-      ],
-      diagnosis: 'Bacterial culture and antimicrobial sensitivity testing',
-      treatment: 'Veterinary-directed flock management and targeted treatment when indicated',
-      medication: 'Selected from laboratory sensitivity results',
-      precautions: [
-        'Isolate affected birds',
-        'Disinfect housing and equipment',
-        'Protect feed and water from contamination',
-        'Control rodents and wild birds',
-        'Follow food-safety and withdrawal-period rules'
-      ],
-      effectiveness: 'Varies; sanitation and prevention are essential for long-term control'
-    }
-  ];
+  useEffect(() => {
+    let active = true;
+    getDiseaseContent()
+      .then((content) => {
+        if (!active) return;
+        setDiseaseDatabase(content.map((entry) => toDisease(entry, lang)));
+        setLoadError(false);
+      })
+      .catch(() => active && setLoadError(true))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, [lang]);
 
-  // Bangla text for fish entries (see src/i18n/fish.ts); poultry entries stay in English.
-  const localizedDatabase = diseaseDatabase.map((disease) =>
-    lang === 'bn' && disease.type === 'fish' && FISH_DATABASE_BN[disease.id]
-      ? { ...disease, ...FISH_DATABASE_BN[disease.id] }
-      : disease
-  );
   const shownDisease = selectedDisease
-    ? localizedDatabase.find((d) => d.id === selectedDisease.id) ?? selectedDisease
+    ? diseaseDatabase.find((d) => d.id === selectedDisease.id) ?? selectedDisease
     : null;
 
-  const filteredDiseases = localizedDatabase.filter(disease => {
+  const filteredDiseases = diseaseDatabase.filter(disease => {
     const matchesSearch = disease.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          disease.fullName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || disease.type === filterType;
@@ -366,7 +121,7 @@ export function DiseaseDatabase() {
             >
               <option value="all">{t('db.allTypes')}</option>
               <option value="fish">{t('common.fishOnly')}</option>
-              <option value="poultry">Poultry Only</option>
+              <option value="poultry">{t('common.poultryOnly')}</option>
             </select>
           </div>
 
@@ -384,7 +139,7 @@ export function DiseaseDatabase() {
                     {disease.type === 'fish' ? (
                       <Fish className="w-6 h-6 text-blue-600" />
                     ) : (
-                      <Bird className="w-6 h-6 text-green-600" />
+                      <PoultryIcon size="1.5rem" />
                     )}
                   </div>
 
@@ -397,7 +152,7 @@ export function DiseaseDatabase() {
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {disease.type === 'fish' ? t('common.fishDisease') : 'Poultry Disease'}
+                        {disease.type === 'fish' ? t('common.fishDisease') : t('common.poultryDisease')}
                       </span>
                       <button className="text-sm text-green-600 hover:text-green-700 font-medium">
                         {t('db.viewDetails')}
@@ -409,7 +164,20 @@ export function DiseaseDatabase() {
             ))}
           </div>
 
-          {filteredDiseases.length === 0 && (
+          {loading && (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-600">{t('common.loading')}</p>
+            </div>
+          )}
+
+          {loadError && !loading && (
+            <div className="text-center py-12">
+              <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <p className="text-xl text-gray-600">{t('db.loadError')}</p>
+            </div>
+          )}
+
+          {!loading && !loadError && filteredDiseases.length === 0 && (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-xl text-gray-600">{t('db.noResults')}</p>
@@ -436,7 +204,7 @@ export function DiseaseDatabase() {
                     {shownDisease.type === 'fish' ? (
                       <Fish className="w-9 h-9" />
                     ) : (
-                      <Bird className="w-9 h-9" />
+                      <PoultryIcon size="2.25rem" />
                     )}
                   </div>
                   <div>
@@ -446,7 +214,7 @@ export function DiseaseDatabase() {
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {shownDisease.type === 'fish' ? t('common.fishDisease') : 'Poultry Disease'}
+                        {shownDisease.type === 'fish' ? t('common.fishDisease') : t('common.poultryDisease')}
                       </span>
                       <span className="text-xs font-medium text-gray-500 bg-white/80 px-3 py-1.5 rounded-full border border-gray-200">
                         {t('db.diseaseId')} {shownDisease.id}
@@ -458,6 +226,29 @@ export function DiseaseDatabase() {
                     <p className="text-lg sm:text-xl text-gray-600 mt-2 max-w-3xl">
                       {shownDisease.fullName}
                     </p>
+
+                    {(shownDisease.notifiable || shownDisease.zoonotic || shownDisease.requiresVeterinarian) && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {shownDisease.notifiable && (
+                          <span className="inline-flex items-center gap-2 text-sm font-semibold text-red-800 bg-red-100 border border-red-200 px-3 py-1.5 rounded-full">
+                            <Siren className="w-4 h-4" />
+                            {t('db.notifiable')}
+                          </span>
+                        )}
+                        {shownDisease.zoonotic && (
+                          <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-900 bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-full">
+                            <ShieldAlert className="w-4 h-4" />
+                            {t('db.zoonotic')}
+                          </span>
+                        )}
+                        {shownDisease.requiresVeterinarian && (
+                          <span className="inline-flex items-center gap-2 text-sm font-semibold text-blue-900 bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-full">
+                            <ShieldCheck className="w-4 h-4" />
+                            {t('db.vetRequired')}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <button
@@ -601,8 +392,6 @@ export function DiseaseDatabase() {
           </div>
         </div>
       )}
-
-      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
     </div>
   );
 }

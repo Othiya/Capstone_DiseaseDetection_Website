@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router';
+import { PoultryIcon } from './PoultryIcon';
 import { ArrowLeft, Pill, AlertCircle, Fish, LogOut, ClipboardList, Syringe, Droplet, AlertTriangle, Info } from 'lucide-react';
-import poultryIcon from 'figma:asset/36269bc95e30a658e2dbcacea10d1ccc3ac7bec8.png';
 import fishSampleImage from 'figma:asset/81061a8ea05a453e7b182b6e9e85ca8c1777b806.png';
 import poultrySampleImage from 'figma:asset/dfc44b2571f492b90efd940d77993d9db48d5a82.png';
-import { API_ORIGIN, getDiagnosis } from '../services/api';
+import { API_ORIGIN, getDiagnosis, getToken } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { StringKey } from '../i18n/strings';
-import { fishDiseaseName, FISH_TREATMENTS_BN } from '../i18n/fish';
+import { getDiseaseByCode, pick } from '../services/diseaseContent';
+import type { DiseaseContent } from '../services/diseaseContent';
 
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -18,6 +19,10 @@ function generateUUID() {
 }
 
 export function Treatment() {
+  // This page can be reached by URL without logging in, so the back link must
+  // go Home rather than into the logged-in dashboard.
+  const isLoggedIn = Boolean(getToken());
+
   const location = useLocation();
   const navigate = useNavigate();
   const { t, lang, locale, num } = useLanguage();
@@ -39,8 +44,11 @@ export function Treatment() {
 
   const type = state?.type || typeFromUrl || 'fish';
   const cameFromNotifications = state?.from === 'notifications';
+  // Back should return to wherever the user opened this from.
+  const backTo = cameFromNotifications ? '/notifications'
+    : state?.from === 'history' ? '/history'
+    : isLoggedIn ? '/selection' : '/';
   const disease = state?.disease || '';
-  const displayDisease = type === 'fish' ? fishDiseaseName(disease, lang) : disease;
   const diagnosisId = state?.diagnosisId;
   const confidence = state?.confidence ?? null;
   const severity = state?.severity || '';
@@ -64,170 +72,50 @@ export function Treatment() {
     return () => { isMounted = false; };
   }, [diagnosisId]);
 
-  const diseaseKey = disease?.toLowerCase().replace(/[\s-]+/g, '_') || '';
+  // Treatment content comes from the backend (app/seeds/), in both languages.
+  // Until it loads, treatmentData falls back to the veterinarian-referral text so the
+  // page never shows a dosing protocol it has not actually confirmed.
+  const [content, setContent] = useState<DiseaseContent | null>(null);
 
-  const treatmentMap: Record<string, any> = {
-    avian_influenza: {
-      treatment_id: 'TRT-POULTRY-AVIAN-INFLUENZA',
-      treatment_name: 'Avian Influenza Response Protocol',
-      medication_name: 'No flock-level curative treatment',
-      application_method: 'VETERINARY_RESPONSE',
-      dosage_text: 'Do not self-medicate. Contact the local livestock authority or a licensed veterinarian immediately.',
-      duration_days: 0,
-      precaution: 'Isolate the flock, restrict movement, use protective equipment, and do not handle or sell sick or dead birds.',
-      alternatives_note: 'Follow official testing, reporting, quarantine, and disposal instructions for the affected area.',
-      reference: 'WOAH. Avian Influenza disease guidance and Terrestrial Animal Health Code.',
-    },
-    coccidiosis: {
-      treatment_id: 'TRT-POULTRY-COCCIDIOSIS',
-      treatment_name: 'Coccidiosis Treatment Protocol',
-      medication_name: 'Amprolium or Sulfonamides',
-      application_method: 'ORAL',
-      dosage_text: 'Amprolium: 0.012% in drinking water for 5–7 days. Vitamin K supplement to reduce bleeding.',
-      duration_days: 7,
-      precaution: 'Keep litter dry. Isolate affected birds. Ensure clean water supply. Disinfect housing regularly.',
-      alternatives_note: 'Alternative: Toltrazuril (25mg/kg bodyweight). Sulfadimethoxine in water for 6 days.',
-      reference: 'Chapman et al. (2010). A review of coccidiosis in poultry. Avian Pathology, 39(1), 1–6.',
-    },
-    new_castle_disease: {
-      treatment_id: 'TRT-POULTRY-NEWCASTLE',
-      treatment_name: 'Newcastle Disease Protocol',
-      medication_name: 'Supportive care under veterinary supervision',
-      application_method: 'VETERINARY_RESPONSE',
-      dosage_text: 'There is no specific antiviral cure. Supportive care and control of secondary infections as directed by a vet.',
-      duration_days: 0,
-      precaution: 'Isolate infected birds immediately. Disinfect all equipment. Protect healthy birds via vaccination.',
-      alternatives_note: 'Electrolyte and vitamin supplements to prevent dehydration and boost immune support.',
-      reference: 'WOAH. Newcastle Disease chapter, Terrestrial Manual.',
-    },
-    newcastle_disease: {
-      treatment_id: 'TRT-POULTRY-NEWCASTLE',
-      treatment_name: 'Newcastle Disease Protocol',
-      medication_name: 'Supportive care under veterinary supervision',
-      application_method: 'VETERINARY_RESPONSE',
-      dosage_text: 'There is no specific antiviral cure. A veterinarian should direct supportive care.',
-      duration_days: 0,
-      precaution: 'Isolate affected birds, restrict movement, disinfect equipment, and protect unaffected birds through vaccination.',
-      alternatives_note: 'Report severe or rapidly spreading outbreaks to local livestock officials.',
-      reference: 'WOAH. Newcastle Disease chapter, Terrestrial Manual.',
-    },
-    pullorum_disease: {
-      treatment_id: 'TRT-POULTRY-PULLORUM',
-      treatment_name: 'Pullorum Disease Response Protocol',
-      medication_name: 'Veterinary testing and flock control',
-      application_method: 'VETERINARY_RESPONSE',
-      dosage_text: 'Confirm with laboratory testing before treatment. Recovered birds remain carriers.',
-      duration_days: 0,
-      precaution: 'Separate affected birds, strengthen hatchery hygiene, and stop movement of eggs and birds.',
-      alternatives_note: 'Prioritize sanitation, carrier removal, and sourcing disease-free stock.',
-      reference: 'WOAH. Pullorum Disease and Fowl Typhoid guidance, Terrestrial Manual.',
-    },
-    salmonella: {
-      treatment_id: 'TRT-POULTRY-SALMONELLA',
-      treatment_name: 'Salmonellosis Treatment Protocol',
-      medication_name: 'Enrofloxacin or Trimethoprim-Sulfamethoxazole',
-      application_method: 'ORAL',
-      dosage_text: 'Enrofloxacin: 10mg/kg bodyweight for 5 days. Conduct sensitivity testing first.',
-      duration_days: 5,
-      precaution: 'Strict biosecurity. Disinfect surfaces and prevent feed/water contamination.',
-      alternatives_note: 'Alternative antibiotics under veterinary guidance based on culture sensitivity.',
-      reference: 'EFSA (2019). Salmonella control in poultry flocks. EFSA Journal.',
-    },
-    salmonellosis: {
-      treatment_id: 'TRT-POULTRY-SALMONELLOSIS',
-      treatment_name: 'Salmonellosis Response Protocol',
-      medication_name: 'Veterinarian-selected antimicrobial when indicated',
-      application_method: 'VETERINARY_RESPONSE',
-      dosage_text: 'Use culture sensitivity testing before treatment. Adhere to withdrawal periods.',
-      duration_days: 0,
-      precaution: 'Isolate affected birds, disinfect housing, and protect handlers.',
-      alternatives_note: 'Flock sanitation and rodent control are essential to prevent recurrence.',
-      reference: 'EFSA. Salmonella control in poultry flocks.',
-    },
-    bacterial_red_disease: {
-      treatment_id: 'TRT-FISH-RED-DISEASE',
-      treatment_name: 'Bacterial Red Disease (Hemorrhagic Septicemia) Protocol',
-      medication_name: 'Oxytetracycline (In Feed) + Potassium Permanganate Pond Disinfection',
-      application_method: 'FEED',
-      dosage_text: 'Oxytetracycline medicated feed @ 50–75 mg/kg body weight daily for 7–10 days. Pond Disinfection: Apply Potassium Permanganate at 2.0–2.5 mg/L (approx. 200–250g per decimal-foot).',
-      duration_days: 10,
-      precaution: 'Stop feeding unmedicated commercial feed. Increase aeration immediately. Do not discharge pond water into natural drainage during treatment.',
-      alternatives_note: 'Florfenicol medicated feed (10 mg/kg body weight/day for 10 days) under veterinary advice. Apply quicklime (1–2 kg/decimal) to improve water quality.',
-      reference: 'FAO Fisheries Technical Paper: Disease Management in Asian Aquaculture / DoF Bangladesh Guidelines.',
-    },
-    bacterial_diseases___aeromoniasis: {
-      treatment_id: 'TRT-FISH-AEROMONIASIS',
-      treatment_name: 'Aeromoniasis Treatment Protocol',
-      medication_name: 'Oxytetracycline or Florfenicol Medicated Feed',
-      application_method: 'FEED',
-      dosage_text: 'Oxytetracycline: 50–75 mg/kg body weight/day mixed in feed for 7–10 consecutive days. Spot treatment: Potassium Permanganate dip (10 ppm for 5–10 minutes) for severe ulcers.',
-      duration_days: 10,
-      precaution: 'Improve water quality immediately by reducing stocking density or exchanging 20–30% water. Observe strict withdrawal periods before harvesting.',
-      alternatives_note: 'Florfenicol @ 10 mg/kg fish body weight for 10 days in feed. Liming the pond with Quicklime (1 kg/decimal).',
-      reference: 'MSD Veterinary Manual: Bacterial Diseases in Aquaculture / Egyptian Journal of Aquatic Biology & Fisheries (2023).',
-    },
-    bacterial_gill_disease: {
-      treatment_id: 'TRT-FISH-GILL-DISEASE',
-      treatment_name: 'Bacterial Gill Disease Protocol',
-      medication_name: 'Potassium Permanganate Bath or Oxytetracycline Feed Treatment',
-      application_method: 'BATH',
-      dosage_text: 'Pond Water Disinfection: Potassium Permanganate @ 2.0–2.5 mg/L or Salt (NaCl) @ 1–2% dip for 10 minutes. In-feed Oxytetracycline @ 50 mg/kg fish body weight/day for 7 days if infection is systemic.',
-      duration_days: 7,
-      precaution: 'Aerate pond heavily during bath treatments. Maintain low organic load by reducing feeding rate and clearing bottom sludge.',
-      alternatives_note: 'Copper Sulfate bath @ 0.5–1.0 mg/L in water with total alkalinity > 50 mg/L CaCO3.',
-      reference: 'FDA Approved Aquaculture Drugs / FAO Aquaculture Health Management.',
-    },
-    fungal_diseases_saprolegniasis: {
-      treatment_id: 'TRT-FISH-SAPROLEGNIASIS',
-      treatment_name: 'Saprolegniasis (Fungal) Treatment Protocol',
-      medication_name: 'Sodium Chloride (Salt) Bath / Potassium Permanganate',
-      application_method: 'BATH',
-      dosage_text: 'Salt Bath: Dip infected fish in 10–30 g/L (1–3%) NaCl solution for 5–10 minutes. Pond Water Bath: Potassium Permanganate @ 2.0–3.0 mg/L.',
-      duration_days: 7,
-      precaution: 'Fungal infections are secondary to physical injury or stress. Handle fish carefully during sampling. Avoid using unbuffered chemicals on fish eggs.',
-      alternatives_note: 'Hydrogen peroxide bath @ 250–500 mg/L for 15 minutes (under strict veterinary control).',
-      reference: 'WOAH Aquatic Animal Health Code / Aquaculture, Fish & Fisheries Review.',
-    },
-    parasitic_diseases: {
-      treatment_id: 'TRT-FISH-PARASITIC',
-      treatment_name: 'Parasitic Disease Protocol',
-      medication_name: 'Formalin or Sodium Chloride (Salt) Bath',
-      application_method: 'BATH',
-      dosage_text: 'Formalin: 25 mg/L (ppm) long-term pond treatment OR 150–250 mg/L short bath for 30–60 minutes under high aeration. Salt dip: 10–20 g/L NaCl for 10–15 minutes.',
-      duration_days: 7,
-      precaution: 'Formalin removes oxygen from water (1 ppm formalin depletes ~1 ppm dissolved oxygen); maintain vigorous aeration during and after treatment.',
-      alternatives_note: 'Praziquantel @ 2 mg/L bath for fluke control. In-feed Trichlorfon or organophosphates (where approved by veterinary authorities).',
-      reference: 'FDA Approved Aquaculture Drugs / PMC Parasitic Disease Treatment in Aquaculture (2023).',
-    },
-    viral_diseases_white_tail_disease: {
-      treatment_id: 'TRT-FISH-WHITE-TAIL',
-      treatment_name: 'White Tail Disease — Supportive Care & Biosecurity Only',
-      medication_name: 'No Antiviral Treatment — Biosecurity & Immunity Booster',
-      application_method: 'FEED',
-      dosage_text: 'No antiviral cure exists. Add Vitamin C (500–1000 mg/kg feed) and immunostimulants to feed to strengthen uninfected stock.',
-      duration_days: 14,
-      precaution: 'White Tail Disease causes up to 100% mortality in post-larvae/prawns. Immediately quarantine infected ponds. Disinfect culture water with chlorine before discharge.',
-      alternatives_note: 'Eradicate affected stock biosecurely. Dry and line-lime pond bottoms prior to re-stocking PCR-screened post-larvae.',
-      reference: 'WOAH Aquatic Animal Health Code Chapter 9.8 (White Tail Disease).',
-    },
-  };
+  useEffect(() => {
+    let active = true;
+    getDiseaseByCode(disease)
+      .then((found) => active && setContent(found))
+      .catch(() => active && setContent(null));
+    return () => { active = false; };
+  }, [disease]);
 
-  const baseTreatmentData = treatmentMap[diseaseKey] || {
-    treatment_id: `TRT-${generateUUID().slice(0, 8).toUpperCase()}`,
-    treatment_name: disease ? t('trt.fallback.name', { disease: displayDisease }) : t('trt.fallback.nameNoDisease'),
-    medication_name: t('trt.fallback.medication'),
-    application_method: null,
-    dosage_text: t('trt.fallback.dosage'),
-    duration_days: null,
-    precaution: t('trt.fallback.precaution'),
-    alternatives_note: t('trt.fallback.alternatives'),
-    reference: null,
-    requires_veterinarian: true,
-  };
+  const displayDisease = content ? pick(content.short_name, lang) : disease;
 
-  // Bangla text for fish treatments (see src/i18n/fish.ts); poultry treatments stay in English.
-  const banglaTreatment = lang === 'bn' && type === 'fish' ? FISH_TREATMENTS_BN[diseaseKey] : undefined;
-  const treatmentData = banglaTreatment ? { ...baseTreatmentData, ...banglaTreatment } : baseTreatmentData;
+  const treatmentData = useMemo(() => {
+    const source = content?.treatment;
+    if (!source) {
+      return {
+        treatment_id: `TRT-${generateUUID().slice(0, 8).toUpperCase()}`,
+        treatment_name: disease ? t('trt.fallback.name', { disease: displayDisease }) : t('trt.fallback.nameNoDisease'),
+        medication_name: t('trt.fallback.medication'),
+        application_method: null as string | null,
+        dosage_text: t('trt.fallback.dosage'),
+        duration_days: null as number | null,
+        precaution: t('trt.fallback.precaution'),
+        alternatives_note: t('trt.fallback.alternatives'),
+        reference: null as string | null,
+        requires_veterinarian: true,
+      };
+    }
+    return {
+      treatment_id: source.treatment_code,
+      treatment_name: pick(source.name, lang),
+      medication_name: pick(source.medication, lang),
+      application_method: source.application_method as string | null,
+      dosage_text: pick(source.dosage, lang),
+      duration_days: source.duration_days,
+      precaution: pick(source.precaution, lang),
+      alternatives_note: pick(source.alternatives, lang),
+      reference: source.reference,
+      requires_veterinarian: source.requires_veterinarian,
+    };
+  }, [content, lang, disease, displayDisease, t]);
 
   const prescription = {
     id: `RX-${Date.now()}`,
@@ -240,11 +128,13 @@ export function Treatment() {
       IN_WATER: Droplet, ORAL: Pill, FEED: Pill, TOPICAL: Syringe,
       INJECTION: Syringe, DIP: Droplet, SPRAY: Droplet, BATH: Droplet,
     };
-    const key = methodIcons[method] ? method : 'FEED';
+    // An unmapped method (e.g. VETERINARY_RESPONSE) has no farmer-applied form, so it
+    // must not fall back to a concrete one like "Medicated Feed".
+    if (!methodIcons[method]) return null;
     return {
-      icon: methodIcons[key],
-      text: t(`method.${key}.text` as StringKey),
-      description: t(`method.${key}.desc` as StringKey),
+      icon: methodIcons[method],
+      text: t(`method.${method}.text` as StringKey),
+      description: t(`method.${method}.desc` as StringKey),
     };
   };
 
@@ -276,12 +166,6 @@ export function Treatment() {
     ];
   }, [applicationMethod, requiresVeterinarian, treatmentData, t]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userName');
-    navigate('/');
-  };
 
   const handleAnalyzeAnother = () => navigate(`/detection?type=${type}`);
 
@@ -290,7 +174,7 @@ export function Treatment() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to={cameFromNotifications ? '/notifications' : '/selection'} className="text-gray-600 hover:text-gray-900">
+            <Link to={backTo} className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">{t('trt.header')}</h1>
@@ -304,7 +188,7 @@ export function Treatment() {
           <div className="flex items-center gap-3 mb-6">
             {type === 'fish'
               ? <Fish className="w-8 h-8 text-blue-600" />
-              : <img src={poultryIcon} alt="Poultry" className="w-8 h-8" />}
+              : <PoultryIcon size="2rem" />}
             <h2 className="text-3xl font-bold text-gray-900">{t('trt.summary')}</h2>
           </div>
 
@@ -446,7 +330,7 @@ export function Treatment() {
           <button onClick={handleAnalyzeAnother} className="bg-green-600 text-white px-8 py-4 rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg">
             {t('common.analyzeAnother')}
           </button>
-          <Link to={cameFromNotifications ? '/notifications' : '/selection'} className="bg-gray-200 text-gray-800 px-8 py-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold text-lg">
+          <Link to={backTo} className="bg-gray-200 text-gray-800 px-8 py-4 rounded-lg hover:bg-gray-300 transition-colors font-semibold text-lg">
             {t('common.back')}
           </Link>
         </div>

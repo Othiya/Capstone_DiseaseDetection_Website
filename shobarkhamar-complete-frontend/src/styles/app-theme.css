@@ -130,10 +130,17 @@ button {
   width: 47px;
   height: 47px;
   border-radius: 17px;
-  background: var(--teal);
-  color: white;
+  /* The mark is teal, so the badge behind it is a light tint rather than solid teal. */
+  background: color-mix(in srgb, var(--teal) 12%, white);
+  color: var(--teal);
   display: grid;
   place-items: center;
+}
+.brand-logo {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+  display: block;
 }
 .brand-lockup strong {
   display: block;
@@ -1048,6 +1055,10 @@ html[lang="bn"] .service-description {
   }
   .brand-symbol svg {
     width: 24px;
+  }
+  .brand-logo {
+    width: 70%;
+    height: 70%;
   }
   .brand-lockup {
     gap: 8px;

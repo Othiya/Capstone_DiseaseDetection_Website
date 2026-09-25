@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import brandLogo from '../assets/shobar-khamar-logo.png';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import {
   Bell,
   BookOpen,
   ChevronDown,
   Home,
-  Leaf,
   LogOut,
   Menu,
   MessageSquare,
@@ -101,7 +101,7 @@ export function SiteLayout() {
         <div className="app-header-inner">
           <Link to={home} className="brand-lockup" aria-label={t("home.brand")}>
             <span className="brand-symbol">
-              <Leaf size={28} strokeWidth={1.8} />
+              <img src={brandLogo} alt="" className="brand-logo" />
             </span>
             <span>
               <strong>{copy("Shobar Khamar", "সবার খামার")}</strong>

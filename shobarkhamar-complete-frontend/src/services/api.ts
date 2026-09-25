@@ -3,7 +3,9 @@
 // All routes live under /api/v1/  (proxied by vite.config.ts)
 // ============================================================
 
-export const API_ORIGIN = import.meta.env.VITE_API_URL || 'http://localhost:18000';
+// Empty in development so uploaded-image paths stay relative and go through the
+// Vite proxy (see vite.config.ts, which proxies /uploads alongside /api).
+export const API_ORIGIN = import.meta.env.VITE_API_URL || '';
 
 const BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api/v1`

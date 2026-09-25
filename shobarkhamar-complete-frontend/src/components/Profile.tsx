@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { ArrowLeft, LogOut, User, Phone, Mail, MapPin, Save, Edit2, Loader2 } from 'lucide-react';
 import { getToken } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -44,7 +44,10 @@ async function updateProfile(data: { name?: string; phone?: string; address?: st
 }
 
 export function Profile() {
-  const navigate = useNavigate();
+  // This page can be reached by URL without logging in, so the back link must
+  // go Home rather than into the logged-in dashboard.
+  const isLoggedIn = Boolean(getToken());
+
   const { t, num } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -91,21 +94,13 @@ export function Profile() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    navigate('/');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-blue-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/selection" className="text-gray-600 hover:text-gray-900">
+            <Link to={isLoggedIn ? '/selection' : '/'} className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">{t('sel.profile')}</h1>

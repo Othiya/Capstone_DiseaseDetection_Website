@@ -1,5 +1,6 @@
 import { useLocation, Link } from 'react-router';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getToken } from '../services/api';
 import { ArrowLeft, AlertCircle, CheckCircle, Pill } from 'lucide-react';
 
 interface DetectionResult {
@@ -27,7 +28,7 @@ export function Results() {
       <span className="empty-results-icon"><Pill size={32} /></span>
       <h1>{lang === 'bn' ? 'এখনও কোনো ফলাফল নেই' : 'Your next step to better care'}</h1>
       <p>{lang === 'bn' ? 'ফলাফল দেখতে প্রথমে একটি স্বাস্থ্য পরীক্ষা করুন।' : 'Start a health check to see your results and care guidance here.'}</p>
-      <Link to="/selection" className="primary-action">{lang === 'bn' ? 'স্বাস্থ্য পরীক্ষা শুরু করুন' : 'Start a health check'}</Link>
+      <Link to={getToken() ? '/selection' : '/'} className="primary-action">{lang === 'bn' ? 'স্বাস্থ্য পরীক্ষা শুরু করুন' : 'Start a health check'}</Link>
     </main>
   );
 

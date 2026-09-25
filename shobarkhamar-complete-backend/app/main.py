@@ -7,6 +7,7 @@ import os
 from app.core.config import settings
 from app.core.database import init_db, close_db
 from app.routers import auth, farms, diseases, diagnosis
+from app.seeds import seed_disease_content
 
 # ── AI Models ─────────────────────────────────────────────────
 try:
@@ -21,7 +22,7 @@ try:
 except ImportError:
     POULTRY_AI_AVAILABLE = False
 
-FISH_MODEL_PATH    = os.getenv("MODEL_PATH",         "/app/models/best_mobilenet_v3_large_fish_disease.pth")
+FISH_MODEL_PATH    = settings.MODEL_PATH
 POULTRY_MODEL_PATH = settings.POULTRY_MODEL_PATH
 
 
@@ -45,6 +46,12 @@ def _load_model(available, cls, path, label):
 async def lifespan(app: FastAPI):
     await init_db()
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+
+    try:
+        count = await seed_disease_content()
+        print(f"✓ Disease reference content seeded ({count} diseases)")
+    except Exception as e:
+        print(f" Disease content seeding failed: {e}")
 
     
     app.state.ai_detector      = _load_model(FISH_AI_AVAILABLE,    DiseaseDetector if FISH_AI_AVAILABLE else None,       FISH_MODEL_PATH,    "Fish")

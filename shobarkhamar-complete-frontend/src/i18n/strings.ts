@@ -20,6 +20,10 @@ export const strings = {
   'common.fishOnly': { en: 'Fish Only', bn: 'শুধু মাছ' },
   'common.fishDiseases': { en: 'Fish Diseases', bn: 'মাছের রোগ' },
   'common.fishDisease': { en: 'Fish Disease', bn: 'মাছের রোগ' },
+  'common.poultryOnly': { en: 'Poultry Only', bn: 'শুধু মুরগি' },
+  'common.poultryDiseases': { en: 'Poultry Diseases', bn: 'মুরগির রোগ' },
+  'common.poultryDisease': { en: 'Poultry Disease', bn: 'মুরগির রোগ' },
+  'common.loading': { en: 'Loading…', bn: 'লোড হচ্ছে…' },
   'common.analyzeAnother': { en: 'Analyze Another Sample', bn: 'আরেকটি নমুনা বিশ্লেষণ করুন' },
   'common.user': { en: 'User', bn: 'ব্যবহারকারী' },
 
@@ -106,6 +110,11 @@ export const strings = {
   },
   'farm.name': { en: 'Farm Name', bn: 'খামারের নাম' },
   'farm.namePhFish': { en: 'e.g., Dhaka Fish Farm', bn: 'যেমন: ঢাকা মৎস্য খামার' },
+  'farm.titlePoultry': { en: 'Poultry Farm Information', bn: 'মুরগির খামারের তথ্য' },
+  'farm.registerPoultry': { en: 'Register your poultry farm', bn: 'আপনার মুরগির খামার নিবন্ধন করুন' },
+  'farm.namePhPoultry': { en: 'e.g., Dhaka Poultry Farm', bn: 'যেমন: ঢাকা পোলট্রি খামার' },
+  'farm.saved': { en: 'Your saved farms', bn: 'আপনার সংরক্ষিত খামার' },
+  'farm.savedHint': { en: 'Pick one to continue, or register a new farm below.', bn: 'একটি বেছে নিয়ে এগিয়ে যান, অথবা নিচে নতুন খামার নিবন্ধন করুন।' },
   'farm.addressPh': { en: 'e.g., Dhaka, Bangladesh', bn: 'যেমন: ঢাকা, বাংলাদেশ' },
   'farm.area': { en: 'Area Size (acres)', bn: 'আয়তন (একর)' },
   'farm.areaPh': { en: 'e.g., 5', bn: 'যেমন: 5' },
@@ -135,6 +144,14 @@ export const strings = {
   'det.tip1': { en: 'Ensure good lighting when taking the photo', bn: 'ছবি তোলার সময় পর্যাপ্ত আলো নিশ্চিত করুন' },
   'det.tip2': { en: 'Keep the camera steady to avoid blurry images', bn: 'ছবি যেন ঝাপসা না হয়, সেজন্য ক্যামেরা স্থির রাখুন' },
   'det.tip3Fish': { en: 'Capture the affected area clearly', bn: 'আক্রান্ত অংশটি স্পষ্টভাবে ছবিতে তুলুন' },
+  'det.titlePoultry': { en: 'Poultry Disease Detection', bn: 'মুরগির রোগ শনাক্তকরণ' },
+  'det.noFarm': {
+    en: 'Register a farm first to save results to your history and keep the image you uploaded. Without a farm you still get a prediction, but nothing is saved.',
+    bn: 'ফলাফল ইতিহাসে জমা রাখতে ও আপলোড করা ছবি সংরক্ষণ করতে আগে একটি খামার নিবন্ধন করুন। খামার ছাড়াও রোগ শনাক্ত হবে, তবে কিছুই সংরক্ষিত হবে না।',
+  },
+  'det.registerFarm': { en: 'Register a farm', bn: 'খামার নিবন্ধন করুন' },
+  'det.uploadPoultry': { en: 'Upload Faeces Image', bn: 'বিষ্ঠার ছবি আপলোড করুন' },
+  'det.tip3Poultry': { en: 'Capture the faeces sample from multiple angles', bn: 'বিষ্ঠার নমুনা কয়েক দিক থেকে ছবিতে তুলুন' },
   'det.tip4': { en: 'Avoid shadows or reflections', bn: 'ছায়া বা আলোর প্রতিফলন এড়িয়ে চলুন' },
   'det.uploadOk': { en: 'Image Upload Successful!', bn: 'ছবি সফলভাবে আপলোড হয়েছে!' },
   'det.uploadOkDesc': { en: 'Your image has been uploaded and is being analyzed.', bn: 'আপনার ছবি আপলোড হয়েছে এবং বিশ্লেষণ করা হচ্ছে।' },
@@ -297,6 +314,23 @@ export const strings = {
   'db.prec': { en: 'Precautions & Prevention', bn: 'সতর্কতা ও প্রতিরোধ' },
   'db.precSub': { en: 'Important safety actions during treatment', bn: 'চিকিৎসার সময় গুরুত্বপূর্ণ নিরাপত্তা ব্যবস্থা' },
   'db.close': { en: 'Close', bn: 'বন্ধ করুন' },
+  'db.loadError': {
+    en: 'Could not load the disease database. Please check your connection and try again.',
+    bn: 'রোগের তথ্যভান্ডার লোড করা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।',
+  },
+  'db.notifiable': {
+    en: 'Must be reported to the livestock authority',
+    bn: 'প্রাণিসম্পদ কর্তৃপক্ষকে জানানো বাধ্যতামূলক',
+  },
+  'db.zoonotic': {
+    en: 'Can spread to people — handle with protection',
+    bn: 'মানুষের শরীরেও ছড়াতে পারে — সুরক্ষা নিয়ে নাড়াচাড়া করুন',
+  },
+  'db.vetRequired': {
+    en: 'A veterinarian must direct treatment for this disease',
+    bn: 'এই রোগের চিকিৎসা পশু চিকিৎসকের তত্ত্বাবধানেই হতে হবে',
+  },
+  'db.reference': { en: 'Reference', bn: 'তথ্যসূত্র' },
 
   // ── History ───────────────────────────────────────────────
   'hist.title': { en: 'Diagnosis History', bn: 'রোগ নির্ণয়ের ইতিহাস' },
@@ -308,6 +342,7 @@ export const strings = {
   'hist.noneSub': { en: 'Start by uploading an image to diagnose diseases', bn: 'রোগ নির্ণয় করতে একটি ছবি আপলোড করে শুরু করুন' },
   'hist.start': { en: 'Start Diagnosis', bn: 'রোগ নির্ণয় শুরু করুন' },
   'hist.fishDiag': { en: 'Fish Diagnosis', bn: 'মাছের রোগ নির্ণয়' },
+  'hist.poultryDiag': { en: 'Poultry Diagnosis', bn: 'মুরগির রোগ নির্ণয়' },
   'hist.closed': { en: 'Closed', bn: 'বন্ধ' },
   'hist.open': { en: 'Open', bn: 'খোলা' },
   'hist.noAi': { en: 'No AI result available', bn: 'এআই ফলাফল পাওয়া যায়নি' },
@@ -346,6 +381,18 @@ export const strings = {
   'notif.fishHealthyMsg': { en: 'Your fish sample on {date} came back healthy.', bn: '{date} তারিখের আপনার মাছের নমুনা সুস্থ পাওয়া গেছে।' },
   'notif.fishHealthyLocalTitle': { en: 'Diagnosis Complete — Healthy', bn: 'রোগ নির্ণয় সম্পন্ন — সুস্থ' },
   'notif.fishHealthyLocalMsg': { en: 'Your fish appears healthy. No disease detected.', bn: 'আপনার মাছ সুস্থ বলে মনে হচ্ছে। কোনো রোগ শনাক্ত হয়নি।' },
+
+  // poultry notifications
+  'notif.poultryDiseaseTitle': { en: 'Disease Detected — {name}', bn: 'রোগ শনাক্ত হয়েছে — {name}' },
+  'notif.poultryDiseaseMsg': { en: 'Poultry sample: {name}.', bn: 'মুরগির নমুনা: {name}।' },
+  'notif.poultryDiseaseLocalMsg': {
+    en: 'A disease was detected in your poultry. Open the result for treatment guidance.',
+    bn: 'আপনার মুরগিতে রোগ শনাক্ত হয়েছে। চিকিৎসার নির্দেশনা দেখতে ফলাফলটি খুলুন।',
+  },
+  'notif.poultryHealthyTitle': { en: 'All Clear — No Disease Detected', bn: 'সব ঠিক আছে — কোনো রোগ শনাক্ত হয়নি' },
+  'notif.poultryHealthyMsg': { en: 'Your poultry sample on {date} came back healthy.', bn: '{date} তারিখের আপনার মুরগির নমুনা সুস্থ পাওয়া গেছে।' },
+  'notif.poultryHealthyLocalTitle': { en: 'Diagnosis Complete — Healthy', bn: 'রোগ নির্ণয় সম্পন্ন — সুস্থ' },
+  'notif.poultryHealthyLocalMsg': { en: 'Your poultry appears healthy. No disease detected.', bn: 'আপনার মুরগি সুস্থ বলে মনে হচ্ছে। কোনো রোগ শনাক্ত হয়নি।' },
   'notif.sys1Title': { en: 'AI Models Updated', bn: 'এআই মডেল হালনাগাদ করা হয়েছে' },
   'notif.sys1Msg': {
     en: 'Fish and poultry detection models updated for higher accuracy.',
@@ -505,6 +552,11 @@ export const strings = {
   'about.fish4': { en: '• Saprolegniasis (fungal)', bn: '• স্যাপ্রোলেগনিয়াসিস (ছত্রাকজনিত)' },
   'about.fish5': { en: '• Parasitic Diseases', bn: '• পরজীবীজনিত রোগ' },
   'about.fish6': { en: '• White Tail Disease (viral)', bn: '• হোয়াইট টেইল রোগ (ভাইরাসজনিত)' },
+  'about.poultry1': { en: '• Newcastle Disease (Ranikhet)', bn: '• রানীক্ষেত রোগ (Newcastle Disease)' },
+  'about.poultry2': { en: '• Coccidiosis', bn: '• ককসিডিওসিস (রক্ত আমাশয়)' },
+  'about.poultry3': { en: '• Avian Influenza (bird flu)', bn: '• বার্ড ফ্লু (এভিয়ান ইনফ্লুয়েঞ্জা)' },
+  'about.poultry4': { en: '• Pullorum Disease', bn: '• পুলোরাম রোগ' },
+  'about.poultry5': { en: '• Salmonellosis', bn: '• স্যালমোনেলোসিস' },
   'about.more': { en: '...and more in our database', bn: '...এবং আমাদের তথ্যভান্ডারে আরও অনেক' },
   'about.disclaimer': { en: 'Disclaimer', bn: 'দায়মুক্তি' },
   'about.disclaimerText': {

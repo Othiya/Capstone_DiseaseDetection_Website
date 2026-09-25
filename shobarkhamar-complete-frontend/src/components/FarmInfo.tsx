@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import { ArrowLeft, LogOut, Fish, Bird, Save, Loader2 } from 'lucide-react';
-import { createFarm } from '../services/api';
+import { PoultryIcon } from './PoultryIcon';
+import { ArrowLeft, LogOut, Fish, Save, Loader2 } from 'lucide-react';
+import { createFarm, getFarms, getToken } from '../services/api';
+import type { Farm } from '../services/api';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export function FarmInfo() {
+  // This page can be reached by URL without logging in, so the back link must
+  // go Home rather than into the logged-in dashboard.
+  const isLoggedIn = Boolean(getToken());
+
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
@@ -16,12 +22,21 @@ export function FarmInfo() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userName');
-    navigate('/');
-  };
+  // Farms the user already registered for this species, so they don't have to
+  // create a duplicate every time they run a detection.
+  const [savedFarms, setSavedFarms] = useState<Farm[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    if (!isLoggedIn) return;
+    const wanted = type === 'fish' ? 'FISH' : 'POULTRY';
+    getFarms()
+      .then((farms) => active && setSavedFarms(farms.filter((f) => f.farm_type === wanted)))
+      .catch(() => active && setSavedFarms([]));
+    return () => { active = false; };
+  }, [isLoggedIn, type]);
+
+
 
   const handleSave = async () => {
     if (!farmName.trim()) {
@@ -33,15 +48,15 @@ export function FarmInfo() {
     setError(null);
 
     try {
-      await createFarm({
+      const farm = await createFarm({
         farm_name: farmName.trim(),
         farm_type: type === 'fish' ? 'FISH' : 'POULTRY',
         address: address.trim() || undefined,
         area_size: areaSize ? parseFloat(areaSize) : undefined,
       });
 
-      // Farm created — go straight to detection
-      navigate(`/detection?type=${type}`);
+      // Farm created — go straight to detection with it selected
+      navigate(`/detection?type=${type}&farm=${farm.farm_id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('farm.errCreate'));
     } finally {
@@ -57,15 +72,15 @@ export function FarmInfo() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/selection" className="text-gray-600 hover:text-gray-900">
+              <Link to={isLoggedIn ? '/selection' : '/'} className="text-gray-600 hover:text-gray-900">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div className="flex items-center gap-2">
                 {type === 'fish'
                   ? <Fish className="w-6 h-6 text-blue-600" />
-                  : <Bird className="w-6 h-6 text-green-600" />}
+                  : <PoultryIcon size="1.5rem" />}
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {type === 'fish' ? t('farm.titleFish') : 'Poultry Farm Information'}
+                  {type === 'fish' ? t('farm.titleFish') : t('farm.titlePoultry')}
                 </h1>
               </div>
             </div>
@@ -76,7 +91,7 @@ export function FarmInfo() {
       <main className="max-w-3xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {type === 'fish' ? t('farm.registerFish') : 'Register your poultry farm'}
+            {type === 'fish' ? t('farm.registerFish') : t('farm.registerPoultry')}
           </h2>
           <p className="text-gray-500 text-sm mb-6">
             {t('farm.needFarm')}
@@ -85,6 +100,26 @@ export function FarmInfo() {
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
+            </div>
+          )}
+
+          {savedFarms.length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-700 mb-1">{t('farm.saved')}</p>
+              <p className="text-xs text-gray-500 mb-3">{t('farm.savedHint')}</p>
+              <div className="flex flex-wrap gap-2">
+                {savedFarms.map((farm) => (
+                  <button
+                    key={farm.farm_id}
+                    type="button"
+                    onClick={() => navigate(`/detection?type=${type}&farm=${farm.farm_id}`)}
+                    className="px-4 py-2 rounded-full border border-gray-300 bg-white hover:border-gray-500 hover:shadow-sm transition text-sm font-medium text-gray-800"
+                  >
+                    {farm.farm_name}
+                    {farm.address && <span className="text-gray-500 font-normal"> — {farm.address}</span>}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -99,7 +134,7 @@ export function FarmInfo() {
                 value={farmName}
                 onChange={(e) => setFarmName(e.target.value)}
                 className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-${accentColor}-500`}
-                placeholder={type === 'fish' ? t('farm.namePhFish') : 'e.g., Dhaka Poultry Farm'}
+                placeholder={type === 'fish' ? t('farm.namePhFish') : t('farm.namePhPoultry')}
               />
             </div>
 

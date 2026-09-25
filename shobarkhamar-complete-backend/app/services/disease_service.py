@@ -1,16 +1,62 @@
+import re
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from uuid import UUID
 from typing import List
-from app.models.disease import Disease, Symptom
+from app.models.disease import Disease, Symptom, TargetSpecies
+from app.models.treatment import DiseaseTreatment
 from app.schemas.disease import DiseaseCreate, DiseaseUpdate, SymptomCreate, SymptomUpdate
+
+
+def normalize_code(value: str) -> str:
+    """Fold a disease code or display name into a comparable key.
+
+    Runs of separators collapse to one underscore, so the model's
+    "Bacterial diseases - Aeromoniasis" matches "bacterial_diseases_aeromoniasis".
+    """
+    return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
 
 
 class DiseaseService:
     """Service for disease-related operations"""
-    
+
+    @staticmethod
+    async def get_content(db: AsyncSession, species: TargetSpecies = None) -> List[Disease]:
+        """Diseases with symptoms and their primary treatment eagerly loaded."""
+        stmt = select(Disease).options(
+            selectinload(Disease.symptoms),
+            selectinload(Disease.disease_treatments).selectinload(DiseaseTreatment.treatment),
+        )
+        if species is not None:
+            stmt = stmt.where(Disease.target_species == species)
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_by_code(db: AsyncSession, code: str) -> Disease:
+        """Look a disease up by AI class code, or by its English name/short name.
+
+        The AI models return codes such as 'ncd', while older UI links pass display
+        names such as 'Newcastle Disease', so both have to resolve to the same row.
+        """
+        wanted = normalize_code(code)
+        for disease in await DiseaseService.get_content(db):
+            candidates = {
+                normalize_code(disease.disease_code),
+                normalize_code(disease.disease_name),
+            }
+            if disease.short_name:
+                candidates.add(normalize_code(disease.short_name))
+            if wanted in candidates:
+                return disease
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No disease content found for '{code}'",
+        )
+
     @staticmethod
     async def get_by_id(db: AsyncSession, disease_id: UUID) -> Disease:
         """Get disease by ID"""
