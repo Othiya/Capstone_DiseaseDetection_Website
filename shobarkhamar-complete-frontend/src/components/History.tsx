@@ -117,6 +117,9 @@ export function History() {
                 const isFish = species === 'fish';
                 const disease = record.ai_result;
                 const isHealthy = disease?.is_healthy ?? true;
+                // "Not fish" / "Non Poultry" are reported as healthy, but they mean the image isn't the right animal.
+                const code = disease?.disease_code?.toLowerCase().replace(/[\s-]+/g, '_');
+                const isWrongImage = isFish ? code === 'not_fish' : code === 'non_poultry';
 
                 return (
                   <div
@@ -155,10 +158,10 @@ export function History() {
 
                         {disease ? (
                           <div className="flex items-start gap-2 mb-3">
-                            <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isHealthy ? 'text-green-600' : 'text-red-600'}`} />
+                            <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isWrongImage ? 'text-yellow-600' : isHealthy ? 'text-green-600' : 'text-red-600'}`} />
                             <div>
-                              <p className={`font-semibold ${isHealthy ? 'text-green-600' : 'text-red-600'}`}>
-                                {isHealthy ? t('common.healthy') : diseaseDisplayName(diseaseNames, disease.disease_name, lang)}
+                              <p className={`font-semibold ${isWrongImage ? 'text-yellow-600' : isHealthy ? 'text-green-600' : 'text-red-600'}`}>
+                                {isWrongImage ? t(isFish ? 'notif.notFishTitle' : 'notif.notPoultryTitle') : isHealthy ? t('common.healthy') : diseaseDisplayName(diseaseNames, disease.disease_name, lang)}
                               </p>
                             </div>
                           </div>

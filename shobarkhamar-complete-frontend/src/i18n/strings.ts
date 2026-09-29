@@ -164,6 +164,10 @@ export const strings = {
     en: 'This image does not appear to be a fish, so no fish disease was detected.',
     bn: 'ছবিটি মাছের বলে মনে হচ্ছে না, তাই মাছের কোনো রোগ শনাক্ত হয়নি।',
   },
+  'det.notPoultry': {
+    en: 'This image does not appear to be poultry, so no poultry disease was detected.',
+    bn: 'ছবিটি মুরগির বলে মনে হচ্ছে না, তাই মুরগির কোনো রোগ শনাক্ত হয়নি।',
+  },
   'det.noDisease': { en: 'No disease detected. Your animal appears healthy.', bn: 'কোনো রোগ শনাক্ত হয়নি। আপনার প্রাণীটি সুস্থ বলে মনে হচ্ছে।' },
   'det.diseaseDetected': { en: 'Disease Detected', bn: 'রোগ শনাক্ত হয়েছে' },
   'det.diseaseDesc': { en: 'A disease was detected in this sample.', bn: 'এই নমুনায় একটি রোগ শনাক্ত হয়েছে।' },
@@ -381,6 +385,28 @@ export const strings = {
   'notif.fishHealthyMsg': { en: 'Your fish sample on {date} came back healthy.', bn: '{date} তারিখের আপনার মাছের নমুনা সুস্থ পাওয়া গেছে।' },
   'notif.fishHealthyLocalTitle': { en: 'Diagnosis Complete — Healthy', bn: 'রোগ নির্ণয় সম্পন্ন — সুস্থ' },
   'notif.fishHealthyLocalMsg': { en: 'Your fish appears healthy. No disease detected.', bn: 'আপনার মাছ সুস্থ বলে মনে হচ্ছে। কোনো রোগ শনাক্ত হয়নি।' },
+  // the fish model's "Not fish" result — the image is not a fish, so it is not "healthy"
+  'notif.notFishTitle': { en: 'Not a Fish Image', bn: 'মাছের ছবি নয়' },
+  'notif.notFishMsg': {
+    en: 'The image uploaded on {date} does not appear to be a fish, so no fish disease was checked.',
+    bn: '{date} তারিখে আপলোড করা ছবিটি মাছের বলে মনে হচ্ছে না, তাই মাছের কোনো রোগ পরীক্ষা করা হয়নি।',
+  },
+  'notif.notFishLocalMsg': {
+    en: 'The uploaded image does not appear to be a fish, so no fish disease was checked. Please upload a clear photo of the fish.',
+    bn: 'আপলোড করা ছবিটি মাছের বলে মনে হচ্ছে না, তাই মাছের কোনো রোগ পরীক্ষা করা হয়নি। অনুগ্রহ করে মাছের একটি স্পষ্ট ছবি আপলোড করুন।',
+  },
+  'notif.notFishBadge': { en: 'Not a fish', bn: 'মাছ নয়' },
+  // the poultry model's "Non Poultry" result — same idea as "Not fish"
+  'notif.notPoultryTitle': { en: 'Not a Poultry Image', bn: 'মুরগির ছবি নয়' },
+  'notif.notPoultryMsg': {
+    en: 'The image uploaded on {date} does not appear to be poultry, so no poultry disease was checked.',
+    bn: '{date} তারিখে আপলোড করা ছবিটি মুরগির বলে মনে হচ্ছে না, তাই মুরগির কোনো রোগ পরীক্ষা করা হয়নি।',
+  },
+  'notif.notPoultryLocalMsg': {
+    en: 'The uploaded image does not appear to be poultry, so no poultry disease was checked. Please upload a clear photo of the faeces sample.',
+    bn: 'আপলোড করা ছবিটি মুরগির বলে মনে হচ্ছে না, তাই মুরগির কোনো রোগ পরীক্ষা করা হয়নি। অনুগ্রহ করে বিষ্ঠার নমুনার একটি স্পষ্ট ছবি আপলোড করুন।',
+  },
+  'notif.notPoultryBadge': { en: 'Not poultry', bn: 'মুরগি নয়' },
 
   // poultry notifications
   'notif.poultryDiseaseTitle': { en: 'Disease Detected — {name}', bn: 'রোগ শনাক্ত হয়েছে — {name}' },

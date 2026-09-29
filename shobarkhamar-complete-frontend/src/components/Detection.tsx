@@ -110,6 +110,7 @@ export function Detection() {
         ai?.disease_name,
         type === 'fish' ? 'fish' : 'poultry',
         diagnosis.diagnosis_id,
+        ai?.disease_code,
       );
       setShowSuccessModal(true);
     } catch (err: unknown) {
@@ -336,7 +337,7 @@ export function Detection() {
                   {isAnalysisUnavailable
                     ? t('det.unavailable')
                     : normalizedDiseaseCode === 'non_poultry' || normalizedDiseaseName === 'non_poultry'
-                      ? 'This image does not appear to be poultry, so no poultry disease was detected.'
+                      ? t('det.notPoultry')
                       : normalizedDiseaseCode === 'not_fish' || normalizedDiseaseName === 'not_fish'
                         ? t('det.notFish')
                         : t('det.noDisease')}

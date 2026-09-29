@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { PoultryIcon } from './PoultryIcon';
 import {
   ArrowLeft, LogOut, Bell, Fish, AlertTriangle, CheckCircle2, Info, Loader2,
-  Clock, Microscope, Activity, X, Trash2,
+  Clock, Microscope, Activity, X, Trash2, ImageOff,
 } from 'lucide-react';
 import { getHistory, getToken } from '../services/api';
 import type { DiagnosisResponse } from '../services/api';
@@ -19,7 +19,12 @@ import type { DiseaseContent } from '../services/diseaseContent';
 
 type Translate = ReturnType<typeof useLanguage>['t'];
 
-type NotifKind = 'disease' | 'healthy' | 'system' | 'info';
+// 'wrongImage': the model said the image is not a fish / not poultry (the backend reports it as is_healthy)
+type NotifKind = 'disease' | 'healthy' | 'wrongImage' | 'system' | 'info';
+
+const WRONG_IMAGE_CODES = { fish: 'not_fish', poultry: 'non_poultry' } as const;
+const isWrongImageCode = (species?: 'fish' | 'poultry', code?: string) =>
+  !!species && code?.toLowerCase().replace(/[\s-]+/g, '_') === WRONG_IMAGE_CODES[species];
 
 interface Notification {
   id: string;
@@ -41,6 +46,7 @@ function appNotificationToNotification(n: {
   timestamp: string;
   read: boolean;
   diagnosisId?: string;
+  diseaseCode?: string;
 }): Notification {
   const lowered = n.message.toLowerCase();
   const species = lowered.includes('poultry') ? 'poultry' : lowered.includes('fish') ? 'fish' : undefined;
@@ -49,7 +55,8 @@ function appNotificationToNotification(n: {
     : undefined;
   return {
     id: n.id,
-    kind: n.type === 'success' ? 'healthy' : n.type === 'warning' ? 'disease' : n.type === 'error' ? 'system' : 'info',
+    kind: isWrongImageCode(species, n.diseaseCode) ? 'wrongImage'
+      : n.type === 'success' ? 'healthy' : n.type === 'warning' ? 'disease' : n.type === 'error' ? 'system' : 'info',
     title: n.title,
     message: n.message,
     timestamp: new Date(n.timestamp),
@@ -69,6 +76,15 @@ function diagnosisToNotification(d: DiagnosisResponse): Notification {
   const isHealthy = d.ai_result ? d.ai_result.is_healthy : HEALTHY_CODES.has(code);
   const name = d.ai_result?.disease_name ?? (code.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Unknown');
 
+  if (isWrongImageCode(species, code)) {
+    const what = species === 'fish' ? 'a fish' : 'poultry';
+    return {
+      id: d.diagnosis_id, kind: 'wrongImage',
+      title: species === 'fish' ? 'Not a Fish Image' : 'Not a Poultry Image',
+      message: `The image uploaded on ${date.toLocaleDateString()} does not appear to be ${what}, so no ${species} disease was checked.`,
+      timestamp: date, read: false, diagnosisId: d.diagnosis_id, species,
+    };
+  }
   if (isHealthy) {
     return {
       id: d.diagnosis_id, kind: 'healthy',
@@ -106,6 +122,7 @@ function KindIcon({ kind, species }: { kind: NotifKind; species?: string }) {
   if (kind === 'healthy') return species === 'poultry'
     ? <PoultryIcon size="1.25rem" />
     : <Fish className="w-5 h-5 text-green-500" />;
+  if (kind === 'wrongImage') return <ImageOff className="w-5 h-5 text-yellow-600" />;
   if (kind === 'system') return <Activity className="w-5 h-5 text-violet-500" />;
   return <Info className="w-5 h-5 text-blue-500" />;
 }
@@ -115,6 +132,7 @@ function kindStyles(kind: NotifKind, read: boolean) {
   switch (kind) {
     case 'disease': return 'bg-red-50 border-red-200 border-l-4';
     case 'healthy': return 'bg-emerald-50 border-emerald-200 border-l-4';
+    case 'wrongImage': return 'bg-yellow-50 border-yellow-200 border-l-4';
     case 'system':  return 'bg-violet-50 border-violet-200 border-l-4';
     default:        return 'bg-blue-50 border-blue-200 border-l-4';
   }
@@ -175,8 +193,11 @@ export function Notifications() {
     try {
       const data = await getHistory(0, 50);
       const fromApi = data.diagnoses.map(diagnosisToNotification).map(applyMeta).filter(isVisible);
+      // Notifications saved before the "not a fish / not poultry" fix say "healthy"; correct them from the diagnosis record.
+      const wrongImageIds = new Set(fromApi.filter((n) => n.kind === 'wrongImage').map((n) => n.diagnosisId));
       const local = notificationService.getAll()
         .map(appNotificationToNotification)
+        .map((n) => (n.kind === 'healthy' && wrongImageIds.has(n.diagnosisId) ? { ...n, kind: 'wrongImage' as const } : n))
         .map(applyMeta)
         .filter(isVisible);
       const system = SYSTEM_NOTIFICATIONS.map(applyMeta).filter(isVisible);
@@ -231,6 +252,16 @@ export function Notifications() {
 
   // Fish, poultry and system notifications are all shown in the chosen language.
   const localize = (n: Notification): { title: string; message: string } => {
+    // Always rebuilt from strings (both languages): older saved notifications carry the wrong "healthy" text.
+    if (n.kind === 'wrongImage') {
+      const key = n.species === 'poultry' ? 'notPoultry' : 'notFish';
+      return {
+        title: t(`notif.${key}Title` as StringKey),
+        message: n.id.startsWith('notif_')
+          ? t(`notif.${key}LocalMsg` as StringKey)
+          : t(`notif.${key}Msg` as StringKey, { date: n.timestamp.toLocaleDateString(lang === 'bn' ? locale : undefined) }),
+      };
+    }
     if (lang === 'en') return { title: n.title, message: n.message };
     if (n.id === 'sys-1') return { title: t('notif.sys1Title'), message: t('notif.sys1Msg') };
     if (n.id === 'info-1') return { title: t('notif.info1Title'), message: t('notif.info1Msg') };
@@ -352,6 +383,11 @@ export function Notifications() {
                         {n.kind === 'healthy' && (
                           <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
                             <CheckCircle2 className="w-3.5 h-3.5" /> {t('common.healthy')}
+                          </span>
+                        )}
+                        {n.kind === 'wrongImage' && (
+                          <span className="flex items-center gap-1 text-xs font-medium text-yellow-600">
+                            <ImageOff className="w-3.5 h-3.5" /> {t(n.species === 'poultry' ? 'notif.notPoultryBadge' : 'notif.notFishBadge')}
                           </span>
                         )}
                       </div>
