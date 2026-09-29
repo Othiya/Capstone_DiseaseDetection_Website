@@ -8,6 +8,8 @@ export interface AppNotification {
   timestamp: string;
   read: boolean;
   diagnosisId?: string;
+  /** AI class code, e.g. 'not_fish' — lets the notifications page tell "not a fish" apart from "healthy" */
+  diseaseCode?: string;
 }
 
 const KEY = 'shobarkhamar_notifications';
@@ -61,9 +63,28 @@ export const notificationService = {
     isHealthy: boolean,
     diseaseName: string | undefined,
     animalType: string,
-    diagnosisId?: string
+    diagnosisId?: string,
+    diseaseCode?: string
   ) {
-    if (isHealthy) {
+    // "Not fish" / "Non Poultry" come back as is_healthy, but they mean the image isn't the right animal.
+    const code = diseaseCode?.toLowerCase().replace(/[\s-]+/g, '_');
+    if (animalType === 'fish' && code === 'not_fish') {
+      this.add({
+        type: 'info',
+        title: 'Not a Fish Image',
+        message: 'The uploaded image does not appear to be a fish, so no fish disease was checked. Please upload a clear photo of the fish.',
+        diagnosisId,
+        diseaseCode: 'not_fish',
+      });
+    } else if (animalType === 'poultry' && code === 'non_poultry') {
+      this.add({
+        type: 'info',
+        title: 'Not a Poultry Image',
+        message: 'The uploaded image does not appear to be poultry, so no poultry disease was checked. Please upload a clear photo of the faeces sample.',
+        diagnosisId,
+        diseaseCode: 'non_poultry',
+      });
+    } else if (isHealthy) {
       this.add({
         type: 'success',
         title: 'Diagnosis Complete — Healthy',
